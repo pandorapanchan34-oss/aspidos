@@ -1,10 +1,12 @@
-🛡 Aspidos
+![Aspidos](./assets/hero.png)
 
-Hope Shield for Anomaly Systems
+# 🛡 Aspidos
 
-«When systems fail silently, Aspidos becomes the shield.»
+![logo](./assets/logo.png)
 
----
+**Hope Shield for Anomaly Systems**
+
+> When systems fail silently, Aspidos becomes the shield
 
 🔥 Overview
 

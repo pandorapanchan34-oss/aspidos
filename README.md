@@ -1,59 +1,158 @@
-# 🛡 Aspidos
+🛡 Aspidos
 
-**Hope Shield for Anomaly Systems**
+Hope Shield for Anomaly Systems
+
+«When systems fail silently, Aspidos becomes the shield.»
+
+---
+
+🔥 Overview
 
 Aspidos is a lightweight anomaly defense engine based on dynamic field modeling.
 
-## Features
+Unlike traditional systems that rely on fixed thresholds, Aspidos treats anomalies as:
 
-- Dynamic anomaly detection (ΔΨ)
-- Accumulated risk model (PGU)
-- Self-stability loop (Ω)
+«Distortions in a dynamic field»
 
-## Install
+---
 
-```bash
-npm install aspidos
-```
+🧠 Core Concept
 
-## Usage
+Traditional systems:
 
-```javascript
+- Detect anomalies using static thresholds
+
+Aspidos:
+
+- Models systems as a dynamic field
+- Measures distortion (ΔΨ)
+- Tracks accumulated risk (PGU)
+- Maintains system stability (Ω)
+
+---
+
+⚙️ Features
+
+ΔΨ Engine — Distortion Detection
+
+Detect anomalies as distortions in a dynamic field rather than fixed thresholds.
+
+PGU Model — Accumulated Risk Field
+
+Continuously integrates risk and detects saturation leading to critical transitions.
+
+Ω Loop — Self-Stability System
+
+Maintains system stability through self-referential feedback dynamics.
+
+Adaptive Behavior
+
+Learns baseline behavior dynamically and adapts to changing environments.
+
+Designed for Critical Systems
+
+Built for environments where silent failure is unacceptable.
+
+---
+
+🧩 System Flow
+
+ΔΨ (distortion) → PGU (accumulation) → Ω (stability)
+
+         ┌────────────┐
+         │   ΔΨ Engine │
+         └─────┬──────┘
+               ↓
+         ┌────────────┐
+         │    PGU     │
+         └─────┬──────┘
+               ↓
+         ┌────────────┐
+         │   Ω Loop    │
+         └────────────┘
+
+---
+
+🚀 Installation
+
+npm install
+
+---
+
+💻 Usage
+
 const { Aspidos } = require('aspidos');
 
 const pd = new Aspidos();
 
-// Basic analysis
-const result = pd.analyze(0.7);
-console.log(result.anomaly.level); // 'NORMAL' | 'WARNING' | 'CRITICAL'
-console.log(result.alert);         // true | false
+// Normal event
+const result = pd.analyze(0.3);
+console.log(result);
 
-// With penetration rate
-pd.analyze(0.9, { penetration: 0.2 });
-console.log(pd.pgu.status().level); // 'SAFE' | 'CAUTION' | 'WARNING' | 'CLIFF'
+// Anomaly event
+const alert = pd.analyze(0.9, { penetration: 0.2 });
+console.log(alert);
 
-// Loop health
-console.log(result.omega.healthy); // true | false
-```
+---
 
-## Alert Levels
+🎯 What Makes It Different?
 
-| Level   | Meaning                  |
-|---------|--------------------------|
-| NORMAL  | No anomaly detected      |
-| WARNING | Elevated risk            |
-| CRITICAL| Immediate alert          |
-| CLIFF   | System boundary exceeded |
+- Not rule-based
+- Not threshold-dependent
+- Not static
 
-## Architecture
+👉 Aspidos is:
 
-```
-Aspidos
-├── DeltaPsiEngine  — dynamic anomaly scoring
-├── PGUMonitor      — accumulated penetration risk
-└── OmegaLoop       — self-stability monitoring
-```
+«A dynamic state control system»
 
-## License
+---
 
-MIT © @pandorapanchan1
+🧠 Philosophy
+
+Aspidos is built on a simple idea:
+
+Anomalies are not errors.
+They are distortions in a system trying to remain stable.
+
+We do not just detect them.
+
+«We hold the system together.»
+
+---
+
+🛡 Use Cases
+
+- Security monitoring systems
+- AI behavior anomaly detection
+- Real-time system health tracking
+- Critical infrastructure monitoring
+
+---
+
+📦 Project Structure
+
+/src        Core engine
+/examples   Node.js examples
+/demo       Browser demo
+
+---
+
+🧲 Keywords
+
+anomaly-detection, cybersecurity, ai, complex-systems, control-theory
+
+---
+
+📄 License
+
+MIT License
+
+---
+
+🌌 Final Note
+
+Aspidos is not just a library.
+
+It is a way to think about systems.
+
+«Not detection. Stabilization.»

@@ -1,34 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Aspidos Demo</title>
+  <title>Aspidos</title>
+  <link rel="icon" href="assets/favicon.png">
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    .hero {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 40px;
+    }
+    h1 {
+      font-size: 3em;
+      margin: 10px 0;
+    }
+    p {
+      color: #aaa;
+    }
+    .btn {
+      display: inline-block;
+      margin: 20px;
+      padding: 10px 20px;
+      border: 1px solid #00ccff;
+      color: #00ccff;
+      text-decoration: none;
+    }
+  </style>
 </head>
+
 <body>
-<h1>Aspidos Demo</h1>
-<button onclick="run()">Run</button>
-<pre id="log"></pre>
 
-<script src="../src/aspidos.js"></script>
-<script>
-const pd = new Aspidos();
+<img src="assets/hero.png" class="hero">
 
-function run() {
-  let log = "";
+<h1>🛡 Aspidos</h1>
 
-  for (let i = 0; i < 30; i++) {
-    const r = pd.analyze(Math.random());
-    log += `t=${i} level=${r.anomaly.level} alert=${r.alert}\n`;
-  }
+<p><b>Hope Shield for Anomaly Systems</b></p>
 
-  log += "\n--- anomaly ---\n";
+<p>Not detection. Stabilization.</p>
 
-  for (let i = 0; i < 10; i++) {
-    const r = pd.analyze(0.9, { penetration: 0.2 });
-    log += `t=${i} level=${r.anomaly.level} alert=${r.alert}\n`;
-  }
+<a class="btn" href="https://github.com/yourname/aspidos">GitHub</a>
 
-  document.getElementById("log").textContent = log;
-}
-</script>
 </body>
 </html>

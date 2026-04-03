@@ -1,6 +1,6 @@
 {
   "name": "aspidos",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Hope Shield for Anomaly Systems",
   "main": "src/aspidos.js",
   "scripts": {

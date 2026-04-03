@@ -9,35 +9,6 @@
 システムが静かに壊れていくのを、ただ見ているだけじゃない。  
 Aspidosは異常を「歪み」として捉え、**リスクを蓄積しながらシステムを積極的に安定化**させる軽量な防御エンジンです。
 
-## 哲学（Philosophy）
-
-> Anomalies are not errors.  
-> They are distortions in a system trying to remain stable.  
-> **We do not just detect them.**  
-> **We hold the system together.**
-
-**Not detection. Stabilization.**
-
-## 主な用途
-
-- **既存セキュリティの追加レイヤー**として  
-- **リアルタイム異常安定化**  
-- クリティカルシステム監視  
-- Security monitoring systems  
-- AI behavior anomaly detection  
-- Real-time system health tracking  
-- Critical infrastructure monitoring
-
-## 特徴（Features）
-
-- **ΔΨ Engine** — 動的フィールドの歪みとして異常を検知  
-- **PGU Model** — リスクの蓄積を連続的に管理し、危険な臨界点を予測  
-- **Ω Loop** — 自己安定化フィードバックでシステムを守る  
-- 極めて軽量で、すべて**固定値の数値計算**（決定論的・再現性が高い）  
-- ブラウザでもNode.jsでもサクッと動く
-
-## システムの流れ
-![Aspidos](./assets/hero.png)
 
 # 🛡 Aspidos
 

@@ -1,14 +1,14 @@
 "Aspidos" (./assets/hero.png)
 
-🛡 Aspidos
+![Aspidos](./assets/hero.png)
 
-"logo" (./assets/logo.png)
+# 🛡 Aspidos
 
-Hope Shield for Anomaly Systems
+![logo](./assets/logo.png)
 
-«When systems fail silently, Aspidos becomes the shield.»
+**Hope Shield for Anomaly Systems**
 
----
+> When systems fail silently, Aspidos becomes the shield.
 
 ⚡ TL;DR
 

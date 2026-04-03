@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Aspidos Demo</title>
+</head>
+<body>
+<h1>Aspidos Demo</h1>
+<button onclick="run()">Run</button>
+<pre id="log"></pre>
+
+<script src="../src/aspidos.js"></script>
+<script>
+const pd = new Aspidos();
+
+function run() {
+  let log = "";
+
+  for (let i = 0; i < 30; i++) {
+    const r = pd.analyze(Math.random());
+    log += `t=${i} level=${r.anomaly.level} alert=${r.alert}\n`;
+  }
+
+  log += "\n--- anomaly ---\n";
+
+  for (let i = 0; i < 10; i++) {
+    const r = pd.analyze(0.9, { penetration: 0.2 });
+    log += `t=${i} level=${r.anomaly.level} alert=${r.alert}\n`;
+  }
+
+  document.getElementById("log").textContent = log;
+}
+</script>
+</body>
+</html>

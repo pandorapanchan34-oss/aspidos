@@ -1,47 +1,85 @@
-# Aspidos
+"Aspidos" (./assets/hero.png)
 
-**🛡 Aspidos**  
-**Hope Shield for Anomaly Systems**
+🛡 Aspidos
 
-> **Aspidosは攻撃ツールではありません。**  
-> **システムの安定性を守るための数学的盾です。**
+"logo" (./assets/logo.png)
 
-システムが静かに壊れていくのを、ただ見ているだけじゃない。  
-Aspidosは異常を「歪み」として捉え、**リスクを蓄積しながらシステムを積極的に安定化**させる軽量な防御エンジンです。
+Hope Shield for Anomaly Systems
 
-![Aspidos](./assets/hero.png)
+«When systems fail silently, Aspidos becomes the shield.»
 
-# 🛡 Aspidos
+---
 
-![logo](./assets/logo.png)
+⚡ TL;DR
 
-**Hope Shield for Anomaly Systems**
+Aspidos is a dynamic anomaly stabilization engine.
 
-> When systems fail silently, Aspidos becomes the shield.
+Not detection.
+Stabilization.
 
+---
 
-🔥 Overview
+🚀 Quick Start
 
-Aspidos is a lightweight anomaly defense engine based on dynamic field modeling.
+const { PandoraDefense } = require('aspidos');
 
-Unlike traditional systems that rely on fixed thresholds, Aspidos treats anomalies as:
+const pd = new PandoraDefense();
 
-«Distortions in a dynamic field»
+// normal event
+const result = pd.analyze(0.3);
+console.log(result.level);
+
+// anomaly event
+const alert = pd.analyze(0.9, { penetration: 0.2 });
+
+if (alert.alert) {
+  console.log('⚠️ System instability detected');
+}
+
+---
+
+❓ Why Aspidos?
+
+Most systems:
+
+- Use fixed thresholds
+- React after failure
+- Treat anomalies as errors
+
+Aspidos:
+
+- No fixed thresholds
+- Models anomalies as distortions in a dynamic field
+- Includes built-in stabilization (Ω loop)
+
+👉 This is not monitoring.
+👉 This is state control.
 
 ---
 
 🧠 Core Concept
 
-Traditional systems:
+Aspidos models a system as a dynamic field:
 
-- Detect anomalies using static thresholds
+- ΔΨ (DeltaPsi) → distortion
+- PGU → accumulated risk
+- Ω (Omega) → system stability
 
-Aspidos:
+Flow:
 
-- Models systems as a dynamic field
-- Measures distortion (ΔΨ)
-- Tracks accumulated risk (PGU)
-- Maintains system stability (Ω)
+ΔΨ (distortion) → PGU (accumulation) → Ω (stability)
+
+         ┌────────────┐
+         │   ΔΨ Engine │
+         └─────┬──────┘
+               ↓
+         ┌────────────┐
+         │    PGU     │
+         └─────┬──────┘
+               ↓
+         ┌────────────┐
+         │   Ω Loop    │
+         └────────────┘
 
 ---
 
@@ -69,55 +107,33 @@ Built for environments where silent failure is unacceptable.
 
 ---
 
-🧩 System Flow
+🛡 Use Cases
 
-ΔΨ (distortion) → PGU (accumulation) → Ω (stability)
-
-         ┌────────────┐
-         │   ΔΨ Engine │
-         └─────┬──────┘
-               ↓
-         ┌────────────┐
-         │    PGU     │
-         └─────┬──────┘
-               ↓
-         ┌────────────┐
-         │   Ω Loop    │
-         └────────────┘
+- Security monitoring systems
+- AI anomaly detection
+- Real-time system health tracking
+- Critical infrastructure monitoring
 
 ---
 
-🚀 Installation
+📦 Installation
 
-npm install
-
----
-
-💻 Usage
-
-const { Aspidos } = require('aspidos');
-
-const pd = new Aspidos();
-
-// Normal event
-const result = pd.analyze(0.3);
-console.log(result);
-
-// Anomaly event
-const alert = pd.analyze(0.9, { penetration: 0.2 });
-console.log(alert);
+npm install aspidos
 
 ---
 
-🎯 What Makes It Different?
+📁 Project Structure
 
-- Not rule-based
-- Not threshold-dependent
-- Not static
+/src        Core engine
+/examples   Node.js examples
+/demo       Browser demo
+/assets     Logos and visuals
 
-👉 Aspidos is:
+---
 
-«A dynamic state control system»
+🧲 Keywords
+
+anomaly-detection, cybersecurity, ai, complex-systems, control-theory
 
 ---
 
@@ -131,29 +147,6 @@ They are distortions in a system trying to remain stable.
 We do not just detect them.
 
 «We hold the system together.»
-
----
-
-🛡 Use Cases
-
-- Security monitoring systems
-- AI behavior anomaly detection
-- Real-time system health tracking
-- Critical infrastructure monitoring
-
----
-
-📦 Project Structure
-
-/src        Core engine
-/examples   Node.js examples
-/demo       Browser demo
-
----
-
-🧲 Keywords
-
-anomaly-detection, cybersecurity, ai, complex-systems, control-theory
 
 ---
 

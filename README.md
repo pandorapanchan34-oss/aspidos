@@ -9,7 +9,15 @@
 システムが静かに壊れていくのを、ただ見ているだけじゃない。  
 Aspidosは異常を「歪み」として捉え、**リスクを蓄積しながらシステムを積極的に安定化**させる軽量な防御エンジンです。
 
+![Aspidos](./assets/hero.png)
 
+# 🛡 Aspidos
+
+![logo](./assets/logo.png)
+
+**Hope Shield for Anomaly Systems**
+
+> When systems fail silently, Aspidos becomes the shield.
 # 🛡 Aspidos
 
 ![logo](./assets/logo.png)

@@ -1,6 +1,6 @@
 {
   "name": "aspidos",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Hope Shield for Anomaly Systems",
   "main": "src/aspidos.js",
   "scripts": {
@@ -14,6 +14,11 @@
   ],
   "author": "@pandorapanchan34-oss",
   "homepage": "https://pandorapanchan34-oss.github.io/aspidos/",
+  "files": [
+  "src",
+  "README.md",
+  "LICENSE"
+],
   "license": "MIT",
   "repository": {
     "type": "git",

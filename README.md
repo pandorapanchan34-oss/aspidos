@@ -39,7 +39,34 @@ const alert = pd.analyze(0.9, { penetration: 0.2 });
 if (alert.alert) {
   console.log('⚠️ System instability detected');
 }
+## 🎯 Convergence Demo
 
+```javascript
+const { PandoraDefense } = require('aspidos');
+const pd = new PandoraDefense();
+
+// Phase A — Harmonic baseline
+const stable = pd.analyze(0.25);
+console.log(stable.level);        // 'NORMAL'
+console.log(stable.omega.phase);  // 'STABLE_PHASE'
+
+// External noise
+pd.analyze(0.85, { penetration: 0.1 });
+
+// Internal rule deviation → RECOVERY_NEEDED
+const slapped = pd.analyze(0.4, { theory: 0.95, penetration: 0.05 });
+console.log(slapped.core.status);    // 'RECOVERY_NEEDED'
+console.log(slapped.core.category);  // 'HIGH_DEVIATION'
+console.log(slapped.core.action);    // 'RECOVERING'
+
+// Autonomous re-stabilization
+const recovery = pd.analyze(0.3);
+console.log(recovery.level);  // 'NORMAL'
+
+// Buffer saturation stress
+const cliff = pd.analyze(0.5, { penetration: 0.9 });
+console.log(cliff.pgu.level);  // 'OVERLOAD'
+```
 ---
 
 ❓ Why Aspidos?

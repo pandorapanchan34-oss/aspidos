@@ -1,4 +1,5 @@
-[![Known Vulnerabilities](https://snyk.io)](https://snyk.io/test/github/pandorapanchan34-oss/aspidos)
+
+[![Known Vulnerabilities](https://snyk.io)](https://snyk.io)
 
 
 ![Aspidos](./assets/hero.png)

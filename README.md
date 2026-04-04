@@ -1,7 +1,6 @@
 
 [![Snyk](https://img.shields.io/snyk/vulnerabilities/github/pandorapanchan34-oss/aspidos?style=flat-square&color=00d1ff&label=DEFENSE+STATUS)](https://snyk.io/test/github/pandorapanchan34-oss/aspidos)
 
-[![Snyk security monitored](https://snyk.io/test/github/pandorapanchan34-oss/aspidos/badge.svg?targetFile=package.json)](https://snyk.io/test/github/pandorapanchan34-oss/aspidos)
 
 ![Aspidos](./assets/hero.png)
 

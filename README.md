@@ -1,5 +1,5 @@
 
-[![Snyk security monitored](https://snyk.io/project/5dcfe33a-d446-493d-8649-7c19eb5ef156/badge.svg)](https://snyk.io/project/5dcfe33a-d446-493d-8649-7c19eb5ef156)
+[![Snyk security monitored](https://snyk.io/test/github/pandorapanchan34-oss/aspidos/badge.svg?targetFile=package.json)](https://snyk.io/test/github/pandorapanchan34-oss/aspidos)
 
 
 

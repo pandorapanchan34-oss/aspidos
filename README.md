@@ -2,6 +2,7 @@
 [![Snyk security monitored](https://snyk.io/test/github/pandorapanchan34-oss/aspidos/badge.svg?targetFile=package.json)](https://snyk.io/test/github/pandorapanchan34-oss/aspidos)
 
 
+[![Security: Perfect](https://img.shields.io/badge/ASPIDOS-SECURE_0-00f2ff?style=for-the-badge&logo=snyk&logoColor=white)](https://snyk.io/test/github/pandorapanchan34-oss/aspidos)
 
 ![Aspidos](./assets/hero.png)
 

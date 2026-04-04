@@ -1,4 +1,4 @@
-[![Snyk security monitored](https://snyk.io)](https://snyk.io)
+[![Snyk security monitored](https://snyk.io/badge.svg](https://snyk.io)
 
 
 ![Aspidos](./assets/hero.png)

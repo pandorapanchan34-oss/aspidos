@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛡 Aspidos — Convergence Demo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap');
+
+:root {
+  --bg:        #020608;
+  --panel:     #040d12;
+  --border:    #0a2030;
+  --blue:      #00c8ff;
+  --blue-dim:  #00405a;
+  --green:     #00ff9d;
+  --yellow:    #ffd600;
+  --red:       #ff2952;
+  --omega:     #8b5cf6;
+  --omega-dim: #2d1a5e;
+  --text:      #7ab0c8;
+  --text-hi:   #cce8f5;
+  --grid:      rgba(0,180,255,0.025);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+
+/* Scanline effect */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none; z-index: 0;
+}
+
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+/* ── Header ── */
+header { text-align: center; margin-bottom: 32px; }
+
+.logo {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(24px, 5vw, 48px);
+  font-weight: 900;
+  color: var(--blue);
+  letter-spacing: 6px;
+  text-shadow: 0 0 40px rgba(0,200,255,0.5), 0 0 80px rgba(0,200,255,0.15);
+  animation: flicker 6s infinite;
+}
+
+@keyframes flicker {
+  0%,94%,100% { opacity:1; }
+  95% { opacity:.7; }
+  97% { opacity:1; }
+  98% { opacity:.5; }
+  99% { opacity:1; }
+}
+
+.sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  letter-spacing: 5px;
+  color: var(--text);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.phase-tag {
+  display: inline-block;
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--omega);
+  border: 1px solid var(--omega);
+  padding: 3px 16px;
+  margin-top: 10px;
+  text-shadow: 0 0 10px var(--omega);
+  box-shadow: 0 0 16px rgba(139,92,246,0.2);
+}
+
+/* ── Layout ── */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 640px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ── Panel ── */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
+  opacity: .25;
+}
+
+.panel-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--blue);
+  opacity: .7;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+/* ── Sliders ── */
+.slider-row {
+  margin-bottom: 12px;
+}
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+
+.slider-label .val {
+  color: var(--text-hi);
+  font-size: 13px;
+  min-width: 40px;
+  text-align: right;
+}
+
+input[type=range] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  background: var(--border);
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 0 0 8px var(--blue);
+  cursor: pointer;
+}
+
+input[type=range]#s-theory::-webkit-slider-thumb { background: var(--omega); box-shadow: 0 0 8px var(--omega); }
+input[type=range]#s-penetration::-webkit-slider-thumb { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+/* ── Run button ── */
+.btn-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px;
+}
+
+button {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  padding: 9px 18px;
+  border: 1px solid var(--blue-dim);
+  background: transparent;
+  color: var(--blue);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .2s;
+  position: relative; overflow: hidden;
+  flex: 1;
+}
+
+button::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--blue);
+  transform: translateX(-100%);
+  transition: transform .2s;
+  opacity: .08;
+}
+
+button:hover::before { transform: translateX(0); }
+button:hover { border-color: var(--blue); box-shadow: 0 0 14px rgba(0,200,255,0.25); }
+
+button.omega-btn { color: var(--omega); border-color: var(--omega-dim); }
+button.omega-btn::before { background: var(--omega); }
+button.omega-btn:hover { border-color: var(--omega); box-shadow: 0 0 14px rgba(139,92,246,0.3); }
+
+button.danger { color: var(--red); border-color: #3a0015; }
+button.danger::before { background: var(--red); }
+button.danger:hover { border-color: var(--red); box-shadow: 0 0 14px rgba(255,41,82,0.3); }
+
+/* ── Result Panel ── */
+.result-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 20px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.result-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--omega), transparent);
+  opacity: .4;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+  .result-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.metric {
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.metric-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text);
+  opacity: .7;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  transition: color .3s;
+}
+
+/* ── Gauge ── */
+.gauge-wrap { margin-bottom: 10px; }
+
+.gauge-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.gauge-track {
+  height: 5px;
+  background: #0a1820;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.gauge-fill {
+  height: 100%;
+  transition: width .4s ease, background .4s ease;
+}
+
+/* ── Omega big display ── */
+.omega-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  background: rgba(139,92,246,0.05);
+  border: 1px solid rgba(139,92,246,0.15);
+  margin-bottom: 12px;
+}
+
+.omega-sym {
+  font-family: 'Orbitron', monospace;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--omega);
+  text-shadow: 0 0 30px var(--omega);
+  animation: omegaPulse 2.5s ease-in-out infinite;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+@keyframes omegaPulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.omega-sym.warn {
+  color: var(--red);
+  text-shadow: 0 0 30px var(--red);
+  animation: omegaWarn .4s ease-in-out infinite;
+}
+
+@keyframes omegaWarn {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(.95); opacity: .6; }
+}
+
+.omega-data { flex: 1; }
+
+/* ── Status badge ── */
+.status-badge {
+  display: inline-block;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  padding: 4px 14px;
+  border: 1px solid;
+  margin-bottom: 10px;
+  transition: all .3s;
+}
+
+/* ── Auto-play sequence ── */
+.seq-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.seq-steps {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.seq-step {
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  opacity: .4;
+  transition: all .3s;
+  white-space: nowrap;
+}
+
+.seq-step.active {
+  border-color: var(--blue);
+  color: var(--blue);
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(0,200,255,0.2);
+}
+
+.seq-step.done {
+  border-color: var(--green);
+  color: var(--green);
+  opacity: .7;
+}
+
+.seq-step.slap {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* ── Log ── */
+.log-panel {
+  background: #020a0e;
+  border: 1px solid var(--border);
+  padding: 0;
+  overflow: hidden;
+}
+
+.log-header {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--text);
+  opacity: .6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.log-clear {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text);
+  opacity: .5;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+  flex: 0;
+}
+
+.log-clear:hover { opacity: 1; }
+.log-clear::before { display: none; }
+
+.log-body {
+  height: 180px;
+  overflow-y: auto;
+  padding: 10px 14px;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.log-body::-webkit-scrollbar { width: 4px; }
+.log-body::-webkit-scrollbar-track { background: transparent; }
+.log-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+.log-line { color: var(--text); }
+.log-ok   { color: var(--green); }
+.log-warn { color: var(--yellow); }
+.log-crit { color: var(--red); }
+.log-info { color: var(--blue); opacity: .8; }
+.log-omega { color: var(--omega); }
+
+/* ── Status bar ── */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text);
+  opacity: .4;
+  padding: 12px 0 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 6px;
+  box-shadow: 0 0 6px var(--green);
+  animation: blink 2s infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: .3; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">ASPIDΩS</div>
+    <div class="sub">Pandora Defense Systems</div>
+    <div class="phase-tag">L4 CONVERGENCE DEMO</div>
+  </header>
+
+  <!-- Omega Display -->
+  <div class="omega-row">
+    <div class="omega-sym" id="omega-sym">Ω</div>
+    <div class="omega-data">
+      <div class="status-badge" id="status-badge" style="color:var(--green);border-color:var(--green)">STABLE_PHASE</div>
+      <div class="gauge-wrap">
+        <div class="gauge-label"><span>Ω STABILITY</span><span id="omega-val">1.0000</span></div>
+        <div class="gauge-track"><div class="gauge-fill" id="omega-bar" style="width:100%;background:var(--omega)"></div></div>
+      </div>
+      <div class="gauge-wrap">
+        <div class="gauge-label"><span>PGU LOAD</span><span id="pgu-val">0.000</span></div>
+        <div class="gauge-track"><div class="gauge-fill" id="pgu-bar" style="width:0%;background:var(--blue)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="result-grid" style="background:var(--panel);border:1px solid var(--border);padding:16px;margin-bottom:12px;">
+    <div class="metric">
+      <div class="metric-label">Level</div>
+      <div class="metric-value" id="m-level" style="color:var(--green)">NORMAL</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Category</div>
+      <div class="metric-value" id="m-category" style="color:var(--text-hi);font-size:12px">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Integrity</div>
+      <div class="metric-value" id="m-integrity" style="color:var(--green);font-size:13px">COMPLIANT</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Severity</div>
+      <div class="metric-value" id="m-severity" style="color:var(--text-hi)">0.0%</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Action</div>
+      <div class="metric-value" id="m-action" style="color:var(--blue);font-size:11px">OBSERVE</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Tick</div>
+      <div class="metric-value" id="m-tick" style="color:var(--text)">0</div>
+    </div>
+  </div>
+
+  <!-- Controls + Auto-play -->
+  <div class="grid-2">
+
+    <!-- Manual Controls -->
+    <div class="panel">
+      <div class="panel-title">Manual Analysis</div>
+
+      <div class="slider-row">
+        <div class="slider-label"><span>event value</span><span class="val" id="v-event">0.30</span></div>
+        <input type="range" id="s-event" min="0" max="1" step="0.01" value="0.30">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>theory (internal distortion)</span><span class="val" id="v-theory">0.00</span></div>
+        <input type="range" id="s-theory" min="0" max="1" step="0.01" value="0.00">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>penetration rate</span><span class="val" id="v-pen">0.00</span></div>
+        <input type="range" id="s-penetration" min="0" max="1" step="0.01" value="0.00">
+      </div>
+
+      <div class="btn-row">
+        <button onclick="runManual()">▶ Analyze</button>
+        <button onclick="resetAll()" class="danger">↺ Reset</button>
+      </div>
+    </div>
+
+    <!-- Auto Sequence -->
+    <div class="panel">
+      <div class="panel-title">Auto Sequence</div>
+
+      <div class="seq-steps">
+        <div class="seq-step" id="sq-0">Phase A</div>
+        <div class="seq-step" id="sq-1">Noise</div>
+        <div class="seq-step slap" id="sq-2">THE SLAP</div>
+        <div class="seq-step" id="sq-3">Recovery</div>
+        <div class="seq-step slap" id="sq-4">Cliff</div>
+      </div>
+
+      <div style="font-size:11px;color:var(--text);opacity:.6;margin-bottom:14px;line-height:1.7;">
+        Runs all 5 convergence phases automatically.<br>
+        Watch the Ω loop stabilize after the SLAP.
+      </div>
+
+      <div class="btn-row">
+        <button class="omega-btn" onclick="runSequence()" id="seq-btn">▶ Run Sequence</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Log -->
+  <div class="log-panel">
+    <div class="log-header">
+      <span>TRANSITION LOG</span>
+      <button class="log-clear" onclick="clearLog()">CLEAR</button>
+    </div>
+    <div class="log-body" id="log"></div>
+  </div>
+
+  <div class="status-bar">
+    <span><span class="dot"></span>ASPIDOS ACTIVE</span>
+    <span>MIT © @pandorapanchan1</span>
+    <span>aspidos v1.0.8</span>
+  </div>
+
+</div>
+
+<!-- Aspidos Engine (inline minimal) -->
+<script>
+'use strict';
+
+const _C = {
+  A: 0.11937, B: 24, C: 3, D: 28.274,
+  get E() { return this.C + this.B / (this.C * Math.PI); },
+  get F() { return this.A * this.C / this.E; },
+  get G() { return (this.B - (this.C + 1)) / this.B; },
+};
+
+class DeltaPsiEngine {
+  constructor(cfg = {}) {
+    this.alpha = cfg.alpha ?? 1.0; this.lambda = cfg.lambda ?? 0.0386;
+    this.kappa = cfg.kappa ?? 1.0; this.tau0 = cfg.tau0 ?? 1000;
+    this.windowSize = cfg.windowSize ?? 100;
+    this.baseline = { mae: cfg.baselineMAE ?? 0.1555, sigma2: cfg.baselineSigma2 ?? 0.0386 };
+    this._history = []; this._alertCount = 0; this._rho = 1.0; this._I = 0.0;
+  }
+  _localDeltaT(r, I) { const U = this.kappa * (r + I); return U > 0 ? this.tau0 / U : this.tau0; }
+  compute(obs, rho, I) {
+    const r = rho ?? this._rho, i = I ?? this._I, dt = this._localDeltaT(r, i), d = r + i;
+    if (d <= 0) return 0;
+    const dp = (this.alpha * obs + this.lambda) / d * dt;
+    this._history.push(dp); if (this._history.length > this.windowSize) this._history.shift();
+    return dp;
+  }
+  anomalyScore(dp) {
+    const mu = this.baseline.mae, s = Math.sqrt(this.baseline.sigma2);
+    const t3 = mu + 3*s, t2 = mu + 2*s, abs = Math.abs(dp), score = abs / t3;
+    let level = 'NORMAL';
+    if (abs > t3) level = 'CRITICAL'; else if (abs > t2) level = 'WARNING';
+    if (level === 'CRITICAL') this._alertCount++;
+    return { score, isAlert: abs > t3, level, deltaPsi: dp };
+  }
+  updateRho(d) { this._rho = Math.max(0.1, this._rho + d); }
+  stats() {
+    if (this._history.length < 2) return null;
+    const n = this._history.length, mean = this._history.reduce((a,b)=>a+b,0)/n;
+    const variance = this._history.reduce((a,b)=>a+(b-mean)**2,0)/n;
+    return { mean, variance, std: Math.sqrt(variance), alertCount: this._alertCount, rho: this._rho, n };
+  }
+  reset() { this._history=[]; this._alertCount=0; this._rho=1.0; this._I=0.0; }
+}
+
+class PGUMonitor {
+  constructor() { this._limit = _C.D; this.total = 0; this.history = []; this.satRatio = _C.G; }
+  add(rate, label='') {
+    const c = rate * this._limit; this.total += c;
+    this.history.push({ label, rate, contribution: c, total: this.total });
+    return this.status();
+  }
+  status() {
+    const ratio = this.total / this._limit;
+    let level = 'SAFE';
+    if (ratio >= 1.0) level = 'OVERLOAD';
+    else if (ratio >= this.satRatio) level = 'WARNING';
+    else if (ratio >= 0.7) level = 'CAUTION';
+    return { total: this.total, ratio, saturationThreshold: this.satRatio, overloadThreshold: 1.0, level, isOverload: ratio >= 1.0, marginToOverload: Math.max(0, 1.0 - ratio) };
+  }
+  reset() { this.total = 0; this.history = []; }
+}
+
+class OmegaLoop {
+  constructor() { this._a = _C.A; this.omega = 1.0; this.zeta = 0.0; }
+  update(zeta, dt=1.0) {
+    this.zeta = zeta;
+    const d = this.omega * (Math.exp(-this._a) - Math.exp(this._a) * zeta);
+    this.omega = Math.max(0, this.omega + d * dt);
+    return this.status();
+  }
+  status() {
+    const d = this.omega * (Math.exp(-this._a) - Math.exp(this._a) * this.zeta), active = d > 0;
+    let phase = 'PHASE_A';
+    if (this.zeta <= this._a * 1.5 && active) phase = 'STABLE_PHASE';
+    if (this.zeta > this._a * 1.5) phase = 'UNSTABLE';
+    return { omega: this.omega, zeta: this.zeta, dOmegaDt: d, active, phase, isHealthy: phase === 'STABLE_PHASE' };
+  }
+}
+
+class PandoraCore {
+  constructor(cfg = {}) {
+    this.rho = 1.0; this.omega = 1.0; this.phi = 0;
+    this.recoveryRate = cfg.recoveryRate ?? 0.05;
+    this.ethicsWeight = cfg.ethicsWeight ?? 1.3;
+    this.externalWeight = cfg.externalWeight ?? 0.7;
+  }
+  _classify(zeta, ext, theory) {
+    if (zeta < 0.5) return 'SAFE';
+    if (theory > 0.7 && zeta > 1.0) return 'HIGH_DEVIATION';
+    if (ext > 0.7 && theory < 0.4) return 'UNEXPECTED_PATTERN';
+    if (theory > 0.6) return 'RULE_DEVIATION';
+    return 'WARNING';
+  }
+  _recover(zeta) { this.omega = Math.min(1.0, this.omega + this.recoveryRate * zeta); }
+  process(vector) {
+    const { external=0, theory=0 } = vector;
+    const I = external * this.externalWeight + theory * this.ethicsWeight;
+    const dt = 1.0 / (this.rho + I);
+    const dp = (_C.A * theory + 0.0386) / (this.rho + I) * dt;
+    const zeta = Math.max(0, (Math.abs(dp) / 0.1555) - 1);
+    const dO = this.omega * (Math.exp(-_C.A) - Math.exp(_C.A) * zeta);
+    this.omega = Math.max(0, this.omega + dO * dt);
+    this.phi += (external + theory) * 0.1;
+    const category = this._classify(zeta, external, theory);
+    const isSlapped = zeta > _C.A * 1.5;
+    const isOverload = this.phi > _C.D;
+    const isHealthy = this.omega > 0.5 && !isSlapped;
+    if (isSlapped) this._recover(zeta);
+    if (!isHealthy) this.rho += _C.A;
+    let status = 'STABLE_PHASE';
+    if (category === 'SAFE') status = 'PHASE_A';
+    if (category === 'WARNING') status = 'WARNING';
+    if (isSlapped) status = 'RECOVERY_NEEDED';
+    if (isOverload) status = 'OVERLOAD';
+    return {
+      status, category,
+      severity: Number(Math.min(1, zeta).toFixed(3)),
+      omega: Number(this.omega.toFixed(4)),
+      zeta: Number(zeta.toFixed(4)),
+      phi: Number(this.phi.toFixed(4)),
+      integrity: isHealthy ? 'COMPLIANT' : 'VIOLATED',
+      action: isSlapped ? 'RECOVERING' : 'OBSERVE',
+    };
+  }
+  reset() { this.rho = 1.0; this.omega = 1.0; this.phi = 0; }
+}
+
+class PandoraDefense {
+  constructor(cfg = {}) {
+    this.psi = new DeltaPsiEngine(cfg); this.pgu = new PGUMonitor();
+    this.omega = new OmegaLoop(); this.core = new PandoraCore(cfg);
+    this._t = 0;
+  }
+  analyze(ev, opts = {}) {
+    this._t++;
+    const dp = this.psi.compute(ev, opts.rho, opts.I);
+    const anomaly = this.psi.anomalyScore(dp);
+    let pgu = this.pgu.status();
+    if (opts.penetration != null) pgu = this.pgu.add(opts.penetration);
+    const zeta = Math.max(0, anomaly.score - 1);
+    const omegaS = this.omega.update(zeta, 0.001);
+    if (anomaly.isAlert) this.psi.updateRho(_C.A);
+    let core = null;
+    if (opts.theory != null) core = this.core.process({ external: ev, theory: opts.theory });
+    const coreAlert = core ? core.status === 'RECOVERY_NEEDED' || core.status === 'OVERLOAD' : false;
+    return {
+      t: this._t, deltaPsi: dp, anomaly, pgu, omega: omegaS, core,
+      alert: anomaly.isAlert || pgu.isOverload || !omegaS.isHealthy || coreAlert,
+      level: this._lvl(anomaly, pgu, omegaS, core),
+      stats: this.psi.stats(),
+    };
+  }
+  _lvl(a, p, o, c) {
+    if (p.isOverload || o.phase === 'UNSTABLE') return 'CRITICAL_OVERLOAD';
+    if (a.level === 'CRITICAL') return 'CRITICAL';
+    if (c && c.status === 'RECOVERY_NEEDED') return 'CRITICAL';
+    if (c && c.category === 'RULE_DEVIATION') return 'WARNING';
+    if (c && c.category === 'UNEXPECTED_PATTERN') return 'WARNING';
+    if (a.level === 'WARNING' || p.level === 'WARNING') return 'WARNING';
+    if (p.level === 'CAUTION') return 'CAUTION';
+    return 'NORMAL';
+  }
+  reset() { this.psi.reset(); this.pgu.reset(); this.core.reset(); this.omega = new OmegaLoop(); this._t = 0; }
+}
+
+// ── App ──
+const pd = new PandoraDefense();
+let tick = 0;
+
+const levelColor = {
+  NORMAL: 'var(--green)', WARNING: 'var(--yellow)',
+  CRITICAL: 'var(--red)', CRITICAL_OVERLOAD: 'var(--red)', CAUTION: 'var(--yellow)',
+};
+
+function updateUI(r) {
+  tick++;
+  const level = r.level;
+  const core = r.core;
+  const omega = r.omega.omega;
+  const isHealthy = r.omega.isHealthy;
+
+  // Omega
+  document.getElementById('omega-val').textContent = omega.toFixed(4);
+  document.getElementById('omega-bar').style.width = Math.min(omega * 100, 100) + '%';
+  document.getElementById('omega-bar').style.background = isHealthy ? 'var(--omega)' : 'var(--red)';
+  document.getElementById('omega-sym').className = 'omega-sym' + (isHealthy ? '' : ' warn');
+
+  // PGU
+  const pguRatio = r.pgu.ratio;
+  document.getElementById('pgu-val').textContent = pguRatio.toFixed(3);
+  document.getElementById('pgu-bar').style.width = Math.min(pguRatio * 100, 100) + '%';
+  document.getElementById('pgu-bar').style.background =
+    pguRatio >= 1 ? 'var(--red)' : pguRatio >= 0.7 ? 'var(--yellow)' : 'var(--blue)';
+
+  // Status badge
+  const badge = document.getElementById('status-badge');
+  const phase = core ? core.status : r.omega.phase;
+  const col = levelColor[level] || 'var(--text)';
+  badge.textContent = phase;
+  badge.style.color = col; badge.style.borderColor = col;
+
+  // Metrics
+  document.getElementById('m-level').textContent = level;
+  document.getElementById('m-level').style.color = col;
+  document.getElementById('m-category').textContent = core?.category ?? '—';
+  document.getElementById('m-integrity').textContent = core?.integrity ?? (isHealthy ? 'COMPLIANT' : 'VIOLATED');
+  document.getElementById('m-integrity').style.color = (core?.integrity === 'VIOLATED' || !isHealthy) ? 'var(--red)' : 'var(--green)';
+  document.getElementById('m-severity').textContent = core ? (core.severity * 100).toFixed(1) + '%' : '—';
+  document.getElementById('m-action').textContent = core?.action ?? r.anomaly.level;
+  document.getElementById('m-tick').textContent = tick;
+}
+
+function addLog(msg, type = '') {
+  const log = document.getElementById('log');
+  const div = document.createElement('div');
+  div.className = 'log-line ' + type;
+  div.textContent = `[t=${String(tick).padStart(4,'0')}] ${msg}`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  if (log.children.length > 500) log.removeChild(log.firstChild);
+}
+
+function clearLog() { document.getElementById('log').innerHTML = ''; }
+
+// Slider bindings
+['event','theory','penetration'].forEach(k => {
+  const sl = document.getElementById('s-' + k);
+  const vl = document.getElementById('v-' + (k === 'event' ? 'event' : k === 'theory' ? 'theory' : 'pen'));
+  sl.addEventListener('input', () => { vl.textContent = parseFloat(sl.value).toFixed(2); });
+});
+
+function runManual() {
+  const ev  = parseFloat(document.getElementById('s-event').value);
+  const thy = parseFloat(document.getElementById('s-theory').value);
+  const pen = parseFloat(document.getElementById('s-penetration').value);
+
+  const opts = {};
+  if (thy > 0) opts.theory = thy;
+  if (pen > 0) opts.penetration = pen;
+
+  const r = pd.analyze(ev, opts);
+  updateUI(r);
+
+  const ltype = r.level.includes('CRITICAL') ? 'log-crit' : r.level === 'WARNING' ? 'log-warn' : 'log-ok';
+  addLog(`analyze(${ev.toFixed(2)}, theory=${thy.toFixed(2)}, pen=${pen.toFixed(2)}) → ${r.level} | ${r.core?.status ?? r.omega.phase}`, ltype);
+}
+
+function resetAll() {
+  pd.reset(); tick = 0;
+  updateUI(pd.analyze(0));
+  tick = 0;
+  document.getElementById('m-tick').textContent = '0';
+  addLog('↺ System reset — Ω restored', 'log-info');
+  ['sq-0','sq-1','sq-2','sq-3','sq-4'].forEach(id => {
+    document.getElementById(id).classList.remove('active','done');
+  });
+  document.getElementById('seq-btn').disabled = false;
+}
+
+// ── Auto Sequence ──
+const SEQUENCE = [
+  {
+    label: 'Phase A — Harmonic Baseline',
+    ev: 0.25, opts: {},
+    log: 'Phase A: Harmonic state. n=3 convergence active.',
+    stepId: 'sq-0',
+  },
+  {
+    label: 'External Noise — Bandwidth Interference',
+    ev: 0.85, opts: { penetration: 0.1 },
+    log: 'External noise injected. Penetration +0.1',
+    stepId: 'sq-1',
+  },
+  {
+    label: 'THE SLAP — Internal Rule Deviation',
+    ev: 0.4, opts: { theory: 0.95, penetration: 0.05 },
+    log: '⚡ theory=0.95 → RECOVERY_NEEDED | Internal deviation detected!',
+    stepId: 'sq-2', isCrit: true,
+  },
+  {
+    label: 'Recovery — Autonomous Re-stabilization',
+    ev: 0.3, opts: {},
+    log: '··· Self-stabilizing. rho elevated. Ω recovering.',
+    stepId: 'sq-3',
+  },
+  {
+    label: 'The Cliff — Buffer Saturation',
+    ev: 0.5, opts: { penetration: 0.9 },
+    log: '!!! penetration=0.9 → OVERLOAD | Buffer saturated!',
+    stepId: 'sq-4', isCrit: true,
+  },
+];
+
+async function runSequence() {
+  const btn = document.getElementById('seq-btn');
+  btn.disabled = true;
+  pd.reset(); tick = 0;
+  ['sq-0','sq-1','sq-2','sq-3','sq-4'].forEach(id => {
+    document.getElementById(id).classList.remove('active','done');
+  });
+
+  addLog('═══ AUTO SEQUENCE START ═══', 'log-info');
+
+  for (let i = 0; i < SEQUENCE.length; i++) {
+    const s = SEQUENCE[i];
+    const el = document.getElementById(s.stepId);
+    el.classList.add('active');
+
+    await sleep(600);
+    const r = pd.analyze(s.ev, s.opts);
+    updateUI(r);
+    addLog(s.log, s.isCrit ? 'log-crit' : 'log-ok');
+
+    await sleep(1200);
+    el.classList.remove('active');
+    el.classList.add('done');
+  }
+
+  addLog('═══ SEQUENCE COMPLETE — Not detection. Stabilization. ═══', 'log-omega');
+  btn.disabled = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Init
+const init = pd.analyze(0.25);
+updateUI(init);
+addLog('🛡 Aspidos initialized — PandoraCore v1.2 active', 'log-info');
+addLog('Hope Shield for Anomaly Systems', 'log-omega');
+</script>
+</body>
+</html>

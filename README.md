@@ -1,9 +1,6 @@
 [![Snyk security monitored](https://snyk.io)](https://snyk.io)
 
 
-
-
-
 ![Aspidos](./assets/hero.png)
 
 # 🛡 Aspidos

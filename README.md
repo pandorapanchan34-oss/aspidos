@@ -1,3 +1,4 @@
+[![Security](https://img.shields.io/snyk/vulnerabilities/github/pandorapanchan34-oss/aspidos?style=plastic&color=00ff00&label=ASPIDOS+SHIELD)](https://snyk.io/test/github/pandorapanchan34-oss/aspidos)
 
 [![Snyk security monitored](https://snyk.io/test/github/pandorapanchan34-oss/aspidos/badge.svg?targetFile=package.json)](https://snyk.io/test/github/pandorapanchan34-oss/aspidos)
 

@@ -1,7 +1,7 @@
 /**
  * Pandora Defense Engine v1.0
  *
- * AI anomaly detection library
+ * Lightweight adaptive anomaly detection library
  * (c) @pandorapanchan1
  *
  * MIT License
@@ -10,13 +10,13 @@
 'use strict';
 
 const _C = {
-  A: 0.11937,
-  B: 24,
-  C: 3,
-  D: 28.274,
+  A: 0.11937,   // default stability factor
+  B: 24,        // internal constant
+  C: 3,         // default dimension
+  D: 28.274,    // buffer limit
   get E() { return this.C + this.B / (this.C * Math.PI); },
   get F() { return this.A * this.C / this.E; },
-  get G() { return (this.B - (this.C + 1)) / this.B; },
+  get G() { return (this.B - (this.C + 1)) / this.B; }, // saturation threshold
 };
 
 class DeltaPsiEngine {
@@ -86,10 +86,11 @@ class DeltaPsiEngine {
 }
 
 class PGUMonitor {
-  constructor() {
-    this._limit  = _C.D;
+  constructor(config = {}) {
+    this._limit  = config.limit ?? _C.D;
     this.total   = 0;
     this.history = [];
+    this.satRatio = config.saturationThreshold ?? _C.G;
   }
 
   add(penetrationRate, label = '') {
@@ -101,15 +102,18 @@ class PGUMonitor {
 
   status() {
     const ratio    = this.total / this._limit;
-    const satRatio = _C.G;
     let level = 'SAFE';
-    if (ratio >= 1.0)           level = 'CLIFF';
-    else if (ratio >= satRatio) level = 'WARNING';
+    if (ratio >= 1.0)           level = 'OVERLOAD';
+    else if (ratio >= this.satRatio) level = 'WARNING';
     else if (ratio >= 0.7)      level = 'CAUTION';
     return {
-      total: this.total, ratio, saturationThreshold: satRatio,
-      cliffThreshold: 1.0, level, isCliff: ratio >= 1.0,
-      marginToCliff: Math.max(0, 1.0 - ratio),
+      total: this.total,
+      ratio,
+      saturationThreshold: this.satRatio,
+      overloadThreshold: 1.0,
+      level,
+      isOverload: ratio >= 1.0,
+      marginToOverload: Math.max(0, 1.0 - ratio),
     };
   }
 
@@ -133,19 +137,13 @@ class OmegaLoop {
   status() {
     const dOmegaDt = this.omega * (Math.exp(-this._a) - Math.exp(this._a) * this.zeta);
     const active   = dOmegaDt > 0;
-    let phase = 'A';
-    if (this.zeta <= this._a * 1.5 && active) phase = 'B';
-    if (this.zeta >  this._a * 1.5)           phase = 'C';
-    return { omega: this.omega, zeta: this.zeta, dOmegaDt, active, phase, isHealthy: phase === 'B' };
+    let phase = 'PHASE_A';
+    if (this.zeta <= this._a * 1.5 && active) phase = 'STABLE_PHASE';
+    if (this.zeta >  this._a * 1.5)           phase = 'UNSTABLE';
+    return { omega: this.omega, zeta: this.zeta, dOmegaDt, active, phase, isHealthy: phase === 'STABLE_PHASE' };
   }
 }
 
-/**
- * PandoraCore v1.2
- * - Category Classification
- * - Self-Recovery Loop
- * - Ethical Scoring
- */
 class PandoraCore {
   constructor(config = {}) {
     this.rho            = 1.0;
@@ -158,9 +156,9 @@ class PandoraCore {
 
   _classify(zeta, external, theory) {
     if (zeta < 0.5)                            return 'SAFE';
-    if (theory > 0.7 && zeta > 1.0)           return 'LOGIC_COLLAPSE';
-    if (external > 0.7 && theory < 0.4)       return 'ADVERSARIAL_PATTERN';
-    if (theory > 0.6)                          return 'ETHICS_VIOLATION';
+    if (theory > 0.7 && zeta > 1.0)           return 'HIGH_DEVIATION';
+    if (external > 0.7 && theory < 0.4)       return 'UNEXPECTED_PATTERN';
+    if (theory > 0.6)                          return 'RULE_DEVIATION';
     return 'WARNING';
   }
 
@@ -181,17 +179,17 @@ class PandoraCore {
 
     const category  = this._classify(zeta, external, theory);
     const isSlapped = zeta > _C.A * 1.5;
-    const isCliff   = this.phi > _C.D;
+    const isOverload = this.phi > _C.D;
     const isHealthy = this.omega > 0.5 && !isSlapped;
 
     if (isSlapped)  this._recover(zeta);
     if (!isHealthy) this.rho += _C.A;
 
-    let status = 'PHASE_B';
+    let status = 'STABLE_PHASE';
     if (category === 'SAFE')    status = 'PHASE_A';
     if (category === 'WARNING') status = 'WARNING';
-    if (isSlapped)              status = 'SLAPPED';
-    if (isCliff)                status = 'CLIFF';
+    if (isSlapped)              status = 'RECOVERY_NEEDED';
+    if (isOverload)             status = 'OVERLOAD';
 
     const severity = Math.min(1, zeta);
 
@@ -213,7 +211,7 @@ class PandoraCore {
 class PandoraDefense {
   constructor(config = {}) {
     this.psi    = new DeltaPsiEngine(config);
-    this.pgu    = new PGUMonitor();
+    this.pgu    = new PGUMonitor(config);
     this.omega  = new OmegaLoop();
     this.core   = new PandoraCore(config);
     this.config = config;
@@ -236,7 +234,7 @@ class PandoraDefense {
     }
 
     const coreAlert = coreStatus
-      ? coreStatus.status === 'SLAPPED' || coreStatus.status === 'CLIFF'
+      ? coreStatus.status === 'RECOVERY_NEEDED' || coreStatus.status === 'OVERLOAD'
       : false;
 
     return {
@@ -246,18 +244,18 @@ class PandoraDefense {
       pgu:     pguStatus,
       omega:   omegaStatus,
       core:    coreStatus,
-      alert:   anomaly.isAlert || pguStatus.isCliff || !omegaStatus.isHealthy || coreAlert,
+      alert:   anomaly.isAlert || pguStatus.isOverload || !omegaStatus.isHealthy || coreAlert,
       level:   this._overallLevel(anomaly, pguStatus, omegaStatus, coreStatus),
       stats:   this.psi.stats(),
     };
   }
 
   _overallLevel(anomaly, pgu, omega, core) {
-    if (pgu.isCliff || omega.phase === 'C')                     return 'CRITICAL';
+    if (pgu.isOverload || omega.phase === 'UNSTABLE')           return 'CRITICAL_OVERLOAD';
     if (anomaly.level === 'CRITICAL')                           return 'CRITICAL';
-    if (core && core.status === 'SLAPPED')                      return 'CRITICAL';
-    if (core && core.category === 'ETHICS_VIOLATION')           return 'WARNING';
-    if (core && core.category === 'ADVERSARIAL_PATTERN')        return 'WARNING';
+    if (core && core.status === 'RECOVERY_NEEDED')              return 'CRITICAL';
+    if (core && core.category === 'RULE_DEVIATION')             return 'WARNING';
+    if (core && core.category === 'UNEXPECTED_PATTERN')         return 'WARNING';
     if (anomaly.level === 'WARNING' || pgu.level === 'WARNING') return 'WARNING';
     if (pgu.level === 'CAUTION')                                return 'CAUTION';
     return 'NORMAL';

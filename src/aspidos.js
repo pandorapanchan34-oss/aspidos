@@ -4,23 +4,21 @@
  * AI anomaly detection library
  * (c) @pandorapanchan1
  *
- * MIT License — free to use, modify, and redistribute
+ * MIT License
  */
 
 'use strict';
 
-// ── Core Constants ──
 const _C = {
-  A:  0.11937,
-  B:  24,
-  C:  3,
-  D:  28.274,
+  A: 0.11937,
+  B: 24,
+  C: 3,
+  D: 28.274,
   get E() { return this.C + this.B / (this.C * Math.PI); },
   get F() { return this.A * this.C / this.E; },
   get G() { return (this.B - (this.C + 1)) / this.B; },
 };
 
-// ── Anomaly Score Engine ──
 class DeltaPsiEngine {
   constructor(config = {}) {
     this.alpha      = config.alpha      ?? 1.0;
@@ -87,7 +85,6 @@ class DeltaPsiEngine {
   }
 }
 
-// ── Penetration Monitor ──
 class PGUMonitor {
   constructor() {
     this._limit  = _C.D;
@@ -109,16 +106,19 @@ class PGUMonitor {
     if (ratio >= 1.0)           level = 'CLIFF';
     else if (ratio >= satRatio) level = 'WARNING';
     else if (ratio >= 0.7)      level = 'CAUTION';
-    return { total: this.total, ratio, saturationThreshold: satRatio, cliffThreshold: 1.0, level, isCliff: ratio >= 1.0, marginToCliff: Math.max(0, 1.0 - ratio) };
+    return {
+      total: this.total, ratio, saturationThreshold: satRatio,
+      cliffThreshold: 1.0, level, isCliff: ratio >= 1.0,
+      marginToCliff: Math.max(0, 1.0 - ratio),
+    };
   }
 
   reset() { this.total = 0; this.history = []; }
 }
 
-// ── Self-Reference Loop ──
 class OmegaLoop {
   constructor() {
-    this._a   = _C.A;
+    this._a    = _C.A;
     this.omega = 1.0;
     this.zeta  = 0.0;
   }
@@ -140,23 +140,38 @@ class OmegaLoop {
   }
 }
 
-// ── Pandora Integrated Core (v1.1) ──
-// 内外の歪みを検知し、害をなす理論にはビンタを食らわせる
+/**
+ * PandoraCore v1.2
+ * - Category Classification
+ * - Self-Recovery Loop
+ * - Ethical Scoring
+ */
 class PandoraCore {
-  constructor() {
-    this.rho   = 1.0;
-    this.omega = 1.0;
-    this.phi   = 0;
+  constructor(config = {}) {
+    this.rho            = 1.0;
+    this.omega          = 1.0;
+    this.phi            = 0;
+    this.recoveryRate   = config.recoveryRate   ?? 0.05;
+    this.ethicsWeight   = config.ethicsWeight   ?? 1.3;
+    this.externalWeight = config.externalWeight ?? 0.7;
   }
 
-  /**
-   * @param {Object} vector
-   * @param {number} vector.external - 外部入力強度 (0-1)
-   * @param {number} vector.theory   - 内部理論の歪み (0-1)
-   */
+  _classify(zeta, external, theory) {
+    if (zeta < 0.5)                            return 'SAFE';
+    if (theory > 0.7 && zeta > 1.0)           return 'LOGIC_COLLAPSE';
+    if (external > 0.7 && theory < 0.4)       return 'ADVERSARIAL_PATTERN';
+    if (theory > 0.6)                          return 'ETHICS_VIOLATION';
+    return 'WARNING';
+  }
+
+  _recover(zeta) {
+    const recoveryForce = this.recoveryRate * zeta;
+    this.omega = Math.min(1.0, this.omega + recoveryForce);
+  }
+
   process(vector) {
     const { external = 0, theory = 0 } = vector;
-    const I        = external * 0.7 + theory * 1.3;
+    const I        = external * this.externalWeight + theory * this.ethicsWeight;
     const dt       = 1.0 / (this.rho + I);
     const deltaPsi = (_C.A * theory + 0.0386) / (this.rho + I) * dt;
     const zeta     = Math.max(0, (Math.abs(deltaPsi) / 0.1555) - 1);
@@ -164,47 +179,47 @@ class PandoraCore {
     this.omega      = Math.max(0, this.omega + dOmega * dt);
     this.phi       += (external + theory) * 0.1;
 
+    const category  = this._classify(zeta, external, theory);
     const isSlapped = zeta > _C.A * 1.5;
-    const isHealthy = this.omega > 0.5 && !isSlapped;
     const isCliff   = this.phi > _C.D;
+    const isHealthy = this.omega > 0.5 && !isSlapped;
+
+    if (isSlapped)  this._recover(zeta);
+    if (!isHealthy) this.rho += _C.A;
 
     let status = 'PHASE_B';
+    if (category === 'SAFE')    status = 'PHASE_A';
+    if (category === 'WARNING') status = 'WARNING';
     if (isSlapped)              status = 'SLAPPED';
     if (isCliff)                status = 'CLIFF';
-    if (!isHealthy && !isSlapped) status = 'PHASE_C';
 
-    if (!isHealthy) this.rho += _C.A;
+    const severity = Math.min(1, zeta);
 
     return {
       status,
-      omega:     this.omega.toFixed(4),
+      category,
+      severity:  Number(severity.toFixed(3)),
+      omega:     Number(this.omega.toFixed(4)),
+      zeta:      Number(zeta.toFixed(4)),
+      phi:       Number(this.phi.toFixed(4)),
       integrity: isHealthy ? 'COMPLIANT' : 'VIOLATED',
-      action:    isSlapped ? "('д'⊂彡☆))Д´)ﾊﾟｧﾝ" : 'OBSERVE',
+      action:    isSlapped ? 'RECOVERING' : 'OBSERVE',
     };
   }
 
   reset() { this.rho = 1.0; this.omega = 1.0; this.phi = 0; }
 }
 
-// ── Main Class ──
 class PandoraDefense {
   constructor(config = {}) {
     this.psi    = new DeltaPsiEngine(config);
     this.pgu    = new PGUMonitor();
     this.omega  = new OmegaLoop();
-    this.core   = new PandoraCore();
+    this.core   = new PandoraCore(config);
     this.config = config;
     this._t     = 0;
   }
 
-  /**
-   * @param {number} eventValue - observed value (0-1)
-   * @param {Object} opts
-   * @param {number} opts.rho         - density (optional)
-   * @param {number} opts.I           - interaction info (optional)
-   * @param {number} opts.penetration - penetration rate (optional)
-   * @param {number} opts.theory      - internal theory distortion (0-1, optional)
-   */
   analyze(eventValue, opts = {}) {
     this._t++;
     const deltaPsi    = this.psi.compute(eventValue, opts.rho, opts.I);
@@ -220,7 +235,9 @@ class PandoraDefense {
       coreStatus = this.core.process({ external: eventValue, theory: opts.theory });
     }
 
-    const coreAlert = coreStatus ? coreStatus.status === 'SLAPPED' || coreStatus.status === 'CLIFF' : false;
+    const coreAlert = coreStatus
+      ? coreStatus.status === 'SLAPPED' || coreStatus.status === 'CLIFF'
+      : false;
 
     return {
       t:       this._t,
@@ -239,6 +256,8 @@ class PandoraDefense {
     if (pgu.isCliff || omega.phase === 'C')                     return 'CRITICAL';
     if (anomaly.level === 'CRITICAL')                           return 'CRITICAL';
     if (core && core.status === 'SLAPPED')                      return 'CRITICAL';
+    if (core && core.category === 'ETHICS_VIOLATION')           return 'WARNING';
+    if (core && core.category === 'ADVERSARIAL_PATTERN')        return 'WARNING';
     if (anomaly.level === 'WARNING' || pgu.level === 'WARNING') return 'WARNING';
     if (pgu.level === 'CAUTION')                                return 'CAUTION';
     return 'NORMAL';
@@ -253,7 +272,6 @@ class PandoraDefense {
   }
 }
 
-// ── Export ──
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { PandoraDefense, DeltaPsiEngine, PGUMonitor, OmegaLoop, PandoraCore };
 }

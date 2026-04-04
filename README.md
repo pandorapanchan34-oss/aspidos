@@ -1,3 +1,4 @@
+[![Known Vulnerabilities](https://snyk.io)](https://snyk.io)
 
 [![Snyk security monitored](https://snyk.io)](https://snyk.io)
 

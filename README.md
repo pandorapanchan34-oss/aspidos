@@ -194,3 +194,6 @@ Aspidos is not just a library.
 It is a way to think about systems.
 
 «Not detection. Stabilization.»
+
+*This project is a fragment of Pandora Theory.*  
+*The rest is out there. Find it.* 🗺️

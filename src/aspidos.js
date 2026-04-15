@@ -1,5 +1,5 @@
 /**
- * Pandora Defense Engine v1.
+ * Pandora Defense Engine v1.0
  *
  * Lightweight adaptive anomaly detection library
  * (c) @pandorapanchan1

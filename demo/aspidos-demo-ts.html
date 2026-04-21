@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛡 Aspidos — Timestamp Edition</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --bg: #020408;
+    --panel: #050d14;
+    --border: #0a2a3a;
+    --blue: #00b4ff;
+    --blue-dim: #003a52;
+    --green: #00ff88;
+    --yellow: #ffd700;
+    --red: #ff3366;
+    --omega: #7c3aed;
+    --text: #8ab8cc;
+    --text-bright: #d0eaf5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(28px, 6vw, 52px);
+    font-weight: 900;
+    color: var(--blue);
+    text-shadow: 0 0 30px rgba(0,180,255,0.5), 0 0 60px rgba(0,180,255,0.2);
+    letter-spacing: 4px;
+    animation: flicker 4s infinite;
+  }
+
+  @keyframes flicker {
+    0%,95%,100% { opacity: 1; }
+    96% { opacity: 0.8; }
+    97% { opacity: 1; }
+    98% { opacity: 0.6; }
+  }
+
+  .tagline {
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: 3px;
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  /* Session info bar */
+  .session-bar {
+    background: #030c17;
+    border: 1px solid #0d2235;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .session-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .session-label {
+    color: #1a4a6b;
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .session-value {
+    color: var(--blue);
+    font-size: 10px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  button {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 10px 20px;
+    border: 1px solid var(--blue-dim);
+    background: transparent;
+    color: var(--blue);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--blue);
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    opacity: 0.08;
+  }
+
+  button:hover::before { transform: translateX(0); }
+  button:hover { border-color: var(--blue); box-shadow: 0 0 12px rgba(0,180,255,0.3); }
+
+  button.danger { color: var(--red); border-color: #3a0015; }
+  button.danger:hover { border-color: var(--red); box-shadow: 0 0 12px rgba(255,51,102,0.3); }
+  button.danger::before { background: var(--red); }
+
+  button.stop { color: var(--yellow); border-color: #3a2a00; }
+  button.stop:hover { border-color: var(--yellow); }
+  button.stop::before { background: var(--yellow); }
+
+  button.export { color: var(--green); border-color: #003a20; font-size: 10px; padding: 8px 14px; }
+  button.export:hover { border-color: var(--green); box-shadow: 0 0 12px rgba(0,255,136,0.3); }
+  button.export::before { background: var(--green); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 16px;
+    position: relative;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    opacity: 0.4;
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--blue);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .gauge-wrap { margin-bottom: 14px; }
+
+  .gauge-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 5px;
+    color: var(--text);
+  }
+
+  .gauge-label span:last-child { color: var(--text-bright); font-size: 13px; }
+
+  .gauge-track {
+    height: 6px;
+    background: #0a1520;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gauge-fill {
+    height: 100%;
+    transition: width 0.3s ease, background 0.3s ease;
+    position: relative;
+  }
+
+  .gauge-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: white;
+    opacity: 0.6;
+    filter: blur(1px);
+  }
+
+  .level-badge {
+    display: inline-block;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border: 1px solid;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+  }
+
+  .level-NORMAL  { color: var(--green); border-color: var(--green); background: rgba(0,255,136,0.05); }
+  .level-WARNING { color: var(--yellow); border-color: var(--yellow); background: rgba(255,215,0,0.05); }
+  .level-CRITICAL{ color: var(--red); border-color: var(--red); background: rgba(255,51,102,0.08); animation: pulse-red 0.5s infinite; }
+  .level-CLIFF   { color: var(--red); border-color: var(--red); background: rgba(255,51,102,0.15); animation: pulse-red 0.3s infinite; }
+
+  @keyframes pulse-red {
+    0%,100% { box-shadow: 0 0 8px rgba(255,51,102,0.4); }
+    50% { box-shadow: 0 0 20px rgba(255,51,102,0.8); }
+  }
+
+  .omega-display { text-align: center; padding: 10px; }
+
+  .omega-symbol {
+    font-family: 'Orbitron', monospace;
+    font-size: 42px;
+    font-weight: 900;
+    transition: all 0.3s;
+  }
+
+  .omega-healthy { color: var(--omega); text-shadow: 0 0 20px rgba(124,58,237,0.6); }
+  .omega-dying   { color: var(--red); text-shadow: 0 0 20px rgba(255,51,102,0.6); }
+
+  .omega-value { font-size: 11px; margin-top: 4px; color: var(--text); }
+
+  .omega-phase {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    margin-top: 6px;
+    letter-spacing: 2px;
+  }
+
+  /* Event timeline panel */
+  .timeline-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .timeline-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--blue);
+    margin-bottom: 10px;
+    opacity: 0.7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .event-count {
+    font-size: 8px;
+    color: var(--red);
+    letter-spacing: 1px;
+  }
+
+  .timeline-scroll {
+    height: 80px;
+    overflow-y: auto;
+    font-size: 10px;
+    line-height: 1.9;
+  }
+
+  .timeline-scroll::-webkit-scrollbar { width: 3px; }
+  .timeline-scroll::-webkit-scrollbar-track { background: transparent; }
+  .timeline-scroll::-webkit-scrollbar-thumb { background: var(--blue-dim); }
+
+  .timeline-entry {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeIn 0.2s forwards;
+    border-bottom: 1px solid #04080f;
+    padding: 1px 0;
+  }
+
+  .ts-abs { color: #ffd700; min-width: 90px; font-size: 9px; }
+  .ts-rel { color: #1a4a6b; min-width: 52px; font-size: 9px; }
+  .ts-event { color: var(--red); font-size: 9px; }
+
+  .log-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .log-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--blue);
+    margin-bottom: 10px;
+    opacity: 0.7;
+  }
+
+  .log-scroll {
+    height: 160px;
+    overflow-y: auto;
+    font-size: 10px;
+    line-height: 1.8;
+  }
+
+  .log-scroll::-webkit-scrollbar { width: 3px; }
+  .log-scroll::-webkit-scrollbar-track { background: transparent; }
+  .log-scroll::-webkit-scrollbar-thumb { background: var(--blue-dim); }
+
+  .log-line { opacity: 0; animation: fadeIn 0.2s forwards; }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .log-NORMAL  { color: var(--green); }
+  .log-WARNING { color: var(--yellow); }
+  .log-CRITICAL{ color: var(--red); }
+  .log-CLIFF   { color: var(--red); font-weight: bold; }
+  .log-INFO    { color: var(--text); opacity: 0.6; }
+
+  .chart-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  canvas { width: 100%; height: 80px; display: block; }
+
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--text);
+    opacity: 0.5;
+    letter-spacing: 1px;
+    padding-top: 8px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 6px;
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .alert-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,51,102,0.05);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+    z-index: 999;
+  }
+  .alert-overlay.flash { opacity: 1; }
+
+  /* Clock display */
+  .clock {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    color: var(--yellow);
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="alert-overlay" id="overlay"></div>
+
+<div class="container">
+
+  <header>
+    <div class="logo">🛡 ASPIDOS</div>
+    <div class="tagline">Hope Shield for Anomaly Systems — Timestamp Edition</div>
+  </header>
+
+  <!-- Session Bar -->
+  <div class="session-bar">
+    <div class="session-item">
+      <span class="session-label">SESSION START</span>
+      <span class="session-value" id="session-start">--</span>
+    </div>
+    <div class="session-item">
+      <span class="session-label">ELAPSED</span>
+      <span class="session-value" id="session-elapsed">00:00:00</span>
+    </div>
+    <div class="session-item">
+      <span class="session-label">NOW</span>
+      <span class="clock" id="clock-now">--:--:--</span>
+    </div>
+    <div class="session-item">
+      <span class="session-label">ALERTS</span>
+      <span class="session-value" style="color:var(--red)" id="alert-count">0</span>
+    </div>
+    <div class="session-item">
+      <span class="session-label">LAST ALERT</span>
+      <span class="session-value" style="color:var(--red);font-size:9px" id="last-alert">—</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="startNormal()">▶ Normal Feed</button>
+    <button class="danger" onclick="startAttack()">⚡ Inject Attack</button>
+    <button class="stop" onclick="stopAll()">■ Stop</button>
+    <button onclick="resetAll()">↺ Reset</button>
+    <button class="export" onclick="exportLog()">⬇ Export Log</button>
+  </div>
+
+  <div class="grid">
+    <!-- ΔΨ Panel -->
+    <div class="panel">
+      <div class="panel-title">ΔΨ — Distortion Engine</div>
+      <div class="level-badge level-NORMAL" id="anomaly-level">NORMAL</div>
+      <div class="gauge-wrap">
+        <div class="gauge-label">
+          <span>DISTORTION</span>
+          <span id="dpsi-val">0.000</span>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-fill" id="dpsi-bar" style="width:0%;background:var(--green)"></div>
+        </div>
+      </div>
+      <div class="gauge-wrap">
+        <div class="gauge-label">
+          <span>SCORE</span>
+          <span id="score-val">0.00</span>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-fill" id="score-bar" style="width:0%;background:var(--green)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PGU Panel -->
+    <div class="panel">
+      <div class="panel-title">PGU — Accumulated Risk</div>
+      <div class="level-badge level-NORMAL" id="pgu-level">SAFE</div>
+      <div class="gauge-wrap">
+        <div class="gauge-label">
+          <span>PENETRATION</span>
+          <span id="pgu-val">0.000</span>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-fill" id="pgu-bar" style="width:0%;background:var(--green)"></div>
+        </div>
+      </div>
+      <div class="gauge-wrap">
+        <div class="gauge-label">
+          <span>MARGIN TO CLIFF</span>
+          <span id="margin-val">1.000</span>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-fill" id="margin-bar" style="width:100%;background:var(--green)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Omega Panel -->
+  <div class="panel" style="margin-bottom:12px;">
+    <div class="panel-title">Ω — Self-Stability Loop</div>
+    <div style="display:flex;align-items:center;gap:24px;">
+      <div class="omega-display">
+        <div class="omega-symbol omega-healthy" id="omega-sym">Ω</div>
+        <div class="omega-value">ω = <span id="omega-val">1.000</span></div>
+        <div class="omega-phase" id="omega-phase" style="color:var(--omega)">PHASE B</div>
+      </div>
+      <div style="flex:1;">
+        <div class="gauge-wrap">
+          <div class="gauge-label"><span>STABILITY</span><span id="omega-pct">100%</span></div>
+          <div class="gauge-track">
+            <div class="gauge-fill" id="omega-bar" style="width:100%;background:var(--omega)"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text);opacity:0.6;margin-top:8px;">
+          dΩ/dt = <span id="domega-val">+0.000</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-panel">
+    <div class="log-title">ΔΨ DISTORTION HISTORY</div>
+    <canvas id="chart" height="80"></canvas>
+  </div>
+
+  <!-- Event Timeline (timestamp-focused) -->
+  <div class="timeline-panel">
+    <div class="timeline-title">
+      <span>⏱ ALERT TIMELINE</span>
+      <span class="event-count">CRITICAL EVENTS: <span id="crit-count">0</span></span>
+    </div>
+    <div class="timeline-scroll" id="timeline"></div>
+  </div>
+
+  <!-- Log -->
+  <div class="log-panel">
+    <div class="log-title">SYSTEM LOG — WITH TIMESTAMPS</div>
+    <div class="log-scroll" id="log"></div>
+  </div>
+
+  <div class="status-bar">
+    <span><span class="dot"></span>ASPIDOS ACTIVE</span>
+    <span>t=<span id="tick">0</span></span>
+    <span>v1.1.0-ts</span>
+    <span>MIT © @pandorapanchan1</span>
+  </div>
+
+</div>
+
+<script>
+// ── Timestamp helpers ──────────────────────────────────────────────────────
+const SESSION_START = new Date();
+let alertCount = 0;
+let critCount = 0;
+const eventLog = []; // for export
+
+function fmtTime(d) {
+  return d.toTimeString().slice(0, 12); // HH:MM:SS.mmm
+}
+
+function fmtISO(d) {
+  return d.toISOString();
+}
+
+function fmtElapsed(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600).toString().padStart(2, '0');
+  const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${sec}`;
+}
+
+function fmtRelative(ms) {
+  if (ms < 60000) return `+${(ms/1000).toFixed(1)}s`;
+  return `+${Math.floor(ms/60000)}m${Math.floor((ms%60000)/1000)}s`;
+}
+
+// Update clock every 100ms
+setInterval(() => {
+  const now = new Date();
+  document.getElementById('clock-now').textContent = fmtTime(now);
+  document.getElementById('session-elapsed').textContent = fmtElapsed(now - SESSION_START);
+}, 100);
+
+// Set session start display
+document.getElementById('session-start').textContent = fmtTime(SESSION_START);
+
+// ── Aspidos Core ───────────────────────────────────────────────────────────
+const _C = { A: 0.11937, D: 28.274, get G() { return 0.85; } };
+
+class DeltaPsiEngine {
+  constructor(config = {}) {
+    this.alpha = config.alpha ?? 1.0;
+    this.lambda = config.lambda ?? 0.0386;
+    this.kappa = config.kappa ?? 1.0;
+    this.tau0 = config.tau0 ?? 1000;
+    this.windowSize = config.windowSize ?? 100;
+    this.baseline = { mu: 0.15, sigma2: 0.04 };
+    this._history = [];
+    this._rho = 1.0;
+  }
+  _localDeltaT(rho) {
+    return this.tau0 / (this.kappa * Math.max(rho, 0.01));
+  }
+  _updateBaseline() {
+    const n = this._history.length;
+    if (n < 10) return;
+    const mean = this._history.reduce((a, b) => a + b, 0) / n;
+    const variance = this._history.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
+    this.baseline.mu = mean;
+    this.baseline.sigma2 = variance;
+  }
+  compute(obs, rho = null) {
+    const r = rho ?? this._rho;
+    const dt = this._localDeltaT(r);
+    let d = (this.alpha * obs + this.lambda) / Math.max(r, 0.01) * dt;
+    d *= (0.99 + Math.random() * 0.02);
+    this._history.push(d);
+    if (this._history.length > this.windowSize) this._history.shift();
+    this._updateBaseline();
+    return d;
+  }
+  anomalyScore(d) {
+    const mu = this.baseline.mu;
+    const sigma = Math.sqrt(this.baseline.sigma2);
+    const threshold = (mu + 3 * sigma) * (1 + Math.random() * 0.03);
+    const abs = Math.abs(d);
+    const score = abs / threshold;
+    return {
+      score,
+      isAlert: abs > threshold,
+      level: abs > threshold ? 'CRITICAL' : (score > 0.7 ? 'WARNING' : 'NORMAL')
+    };
+  }
+}
+
+class PGUMonitor {
+  constructor() { this.total = 0; this.limit = _C.D; this.decay = 0.99; }
+  add(rate) {
+    this.total *= this.decay;
+    this.total += rate * this.limit;
+    return this.status();
+  }
+  status() {
+    const ratio = this.total / this.limit;
+    let level = 'SAFE';
+    if (ratio >= 1) level = 'CLIFF';
+    else if (ratio >= _C.G) level = 'WARNING';
+    else if (ratio >= 0.7) level = 'CAUTION';
+    return { ratio, level, isCliff: ratio >= 1, margin: Math.max(0, 1 - ratio) };
+  }
+}
+
+class OmegaLoop {
+  constructor() { this.omega = 1; this.zeta = 0; }
+  update(zeta) {
+    this.zeta = zeta;
+    const d = this.omega * (Math.exp(-_C.A) - Math.exp(_C.A) * zeta);
+    this.omega = Math.max(0, this.omega + d * 0.001);
+    const phase = zeta <= _C.A * 1.5 && d > 0 ? 'B' : (zeta > _C.A * 1.5 ? 'C' : 'A');
+    return { omega: this.omega, healthy: d > 0, dOmega: d, phase };
+  }
+}
+
+class Aspidos {
+  constructor() {
+    this.psi = new DeltaPsiEngine();
+    this.pgu = new PGUMonitor();
+    this.omega = new OmegaLoop();
+  }
+  analyze(v, opts = {}) {
+    const d = this.psi.compute(v);
+    const a = this.psi.anomalyScore(d);
+    const p = opts.penetration ? this.pgu.add(opts.penetration) : this.pgu.status();
+    const z = Math.max(0, a.score - 1);
+    const o = this.omega.update(z);
+    return { deltaPsi: d, anomaly: a, pgu: p, omega: o, alert: a.isAlert || p.isCliff || !o.healthy };
+  }
+}
+
+// ── Demo Logic ─────────────────────────────────────────────────────────────
+const pd = new Aspidos();
+let timer = null;
+let tick = 0;
+const chartData = [];
+const MAX_CHART = 60;
+
+function getColor(level) {
+  return { NORMAL: '#00ff88', WARNING: '#ffd700', CRITICAL: '#ff3366', CLIFF: '#ff3366', SAFE: '#00ff88', CAUTION: '#ffd700' }[level] || '#8ab8cc';
+}
+
+function updateUI(r) {
+  const now = new Date();
+  const elapsed = now - SESSION_START;
+  tick++;
+  document.getElementById('tick').textContent = tick;
+
+  // ΔΨ
+  const dpsi = Math.abs(r.deltaPsi);
+  const dpsiPct = Math.min(dpsi / 2000 * 100, 100);
+  const scorePct = Math.min(r.anomaly.score * 50, 100);
+  const aColor = getColor(r.anomaly.level);
+
+  document.getElementById('dpsi-val').textContent = r.deltaPsi.toFixed(3);
+  document.getElementById('dpsi-bar').style.width = dpsiPct + '%';
+  document.getElementById('dpsi-bar').style.background = aColor;
+  document.getElementById('score-val').textContent = r.anomaly.score.toFixed(3);
+  document.getElementById('score-bar').style.width = scorePct + '%';
+  document.getElementById('score-bar').style.background = aColor;
+
+  const aLevel = document.getElementById('anomaly-level');
+  aLevel.textContent = r.anomaly.level;
+  aLevel.className = 'level-badge level-' + r.anomaly.level;
+
+  // PGU
+  const pColor = getColor(r.pgu.level);
+  document.getElementById('pgu-val').textContent = r.pgu.ratio.toFixed(3);
+  document.getElementById('pgu-bar').style.width = Math.min(r.pgu.ratio * 100, 100) + '%';
+  document.getElementById('pgu-bar').style.background = pColor;
+  document.getElementById('margin-val').textContent = r.pgu.margin.toFixed(3);
+  document.getElementById('margin-bar').style.width = Math.min(r.pgu.margin * 100, 100) + '%';
+  document.getElementById('margin-bar').style.background = pColor;
+
+  const pLevel = document.getElementById('pgu-level');
+  pLevel.textContent = r.pgu.level;
+  pLevel.className = 'level-badge level-' + (r.pgu.level === 'CLIFF' ? 'CRITICAL' : r.pgu.level === 'WARNING' ? 'WARNING' : 'NORMAL');
+
+  // Omega
+  const oColor = r.omega.healthy ? '#7c3aed' : '#ff3366';
+  document.getElementById('omega-val').textContent = r.omega.omega.toFixed(4);
+  document.getElementById('omega-pct').textContent = Math.round(r.omega.omega * 100) + '%';
+  document.getElementById('omega-bar').style.width = Math.min(r.omega.omega * 100, 100) + '%';
+  document.getElementById('omega-bar').style.background = oColor;
+  document.getElementById('domega-val').textContent = (r.omega.dOmega >= 0 ? '+' : '') + r.omega.dOmega.toFixed(4);
+  document.getElementById('omega-sym').className = 'omega-symbol ' + (r.omega.healthy ? 'omega-healthy' : 'omega-dying');
+
+  const phaseEl = document.getElementById('omega-phase');
+  phaseEl.textContent = 'PHASE ' + r.omega.phase;
+  phaseEl.style.color = { A: '#ffd700', B: '#7c3aed', C: '#ff3366' }[r.omega.phase];
+
+  // Chart
+  chartData.push({ v: r.anomaly.score, level: r.anomaly.level });
+  if (chartData.length > MAX_CHART) chartData.shift();
+  drawChart();
+
+  // Alert handling with timestamp
+  if (r.alert) {
+    alertCount++;
+    document.getElementById('alert-count').textContent = alertCount;
+    document.getElementById('last-alert').textContent = fmtTime(now);
+
+    const ov = document.getElementById('overlay');
+    ov.classList.add('flash');
+    setTimeout(() => ov.classList.remove('flash'), 100);
+  }
+
+  // CRITICAL/CLIFF → timeline
+  if (r.anomaly.level === 'CRITICAL' || r.pgu.level === 'CLIFF') {
+    critCount++;
+    document.getElementById('crit-count').textContent = critCount;
+    addTimeline(now, elapsed, r);
+  }
+
+  // Log with timestamp
+  addLog(r, now, elapsed);
+
+  // Store for export
+  eventLog.push({
+    iso: fmtISO(now),
+    elapsed: fmtElapsed(elapsed),
+    tick,
+    deltaPsi: r.deltaPsi.toFixed(3),
+    score: r.anomaly.score.toFixed(3),
+    anomaly: r.anomaly.level,
+    pgu: r.pgu.level,
+    pguRatio: r.pgu.ratio.toFixed(3),
+    omega: r.omega.phase,
+    omegaVal: r.omega.omega.toFixed(4),
+    alert: r.alert
+  });
+}
+
+function addTimeline(now, elapsed, r) {
+  const tl = document.getElementById('timeline');
+  const entry = document.createElement('div');
+  entry.className = 'timeline-entry';
+  entry.innerHTML = `
+    <span class="ts-abs">${fmtTime(now)}</span>
+    <span class="ts-rel">${fmtRelative(elapsed)}</span>
+    <span class="ts-event">${r.anomaly.level} | PGU:${r.pgu.level} | Ω:${r.omega.phase} | score:${r.anomaly.score.toFixed(2)}</span>
+  `;
+  tl.appendChild(entry);
+  tl.scrollTop = tl.scrollHeight;
+  if (tl.children.length > 100) tl.removeChild(tl.firstChild);
+}
+
+function addLog(r, now, elapsed) {
+  const log = document.getElementById('log');
+  const line = document.createElement('div');
+  const t = String(tick).padStart(4, '0');
+  const level = r.anomaly.level;
+  line.className = `log-line log-${level}`;
+  const ts = fmtTime(now).slice(0, 8); // HH:MM:SS
+  const el = fmtElapsed(elapsed);
+  line.textContent = `[${ts}|+${el}|t=${t}] ΔΨ=${r.deltaPsi.toFixed(2).padStart(8)} score=${r.anomaly.score.toFixed(3)} ${level.padEnd(8)} PGU:${r.pgu.level} Ω:${r.omega.phase}`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+  if (log.children.length > 200) log.removeChild(log.firstChild);
+}
+
+function addLogInfo(msg) {
+  const log = document.getElementById('log');
+  const line = document.createElement('div');
+  const now = new Date();
+  line.className = 'log-line log-INFO';
+  line.textContent = `[${fmtTime(now).slice(0,8)}] ${msg}`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function drawChart() {
+  const canvas = document.getElementById('chart');
+  const W = canvas.offsetWidth;
+  const H = 80;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(0,180,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = (H / 4) * i;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  ctx.strokeStyle = 'rgba(255,51,102,0.3)';
+  ctx.setLineDash([4, 4]);
+  const thY = H - (1.0 / 2.0) * H;
+  ctx.beginPath(); ctx.moveTo(0, thY); ctx.lineTo(W, thY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  if (chartData.length < 2) return;
+
+  const step = W / (MAX_CHART - 1);
+  ctx.beginPath();
+  chartData.forEach((d, i) => {
+    const x = i * step;
+    const y = H - Math.min(d.v / 2.0, 1) * H;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = 'rgba(0,180,255,0.6)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  chartData.forEach((d, i) => {
+    if (d.level === 'CRITICAL') {
+      const x = i * step;
+      const y = H - Math.min(d.v / 2.0, 1) * H;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff3366';
+      ctx.fill();
+    }
+  });
+}
+
+function startNormal() {
+  stopAll();
+  addLogInfo('▶ Normal feed started');
+  timer = setInterval(() => {
+    const v = Math.random() * 0.5;
+    const r = pd.analyze(v);
+    updateUI(r);
+  }, 300);
+}
+
+function startAttack() {
+  stopAll();
+  addLogInfo('⚡ Attack injection started');
+  timer = setInterval(() => {
+    const v = 0.7 + Math.random() * 0.3;
+    const r = pd.analyze(v, { penetration: 0.15 + Math.random() * 0.1 });
+    updateUI(r);
+  }, 200);
+}
+
+function stopAll() {
+  if (timer) { clearInterval(timer); timer = null; }
+  addLogInfo('■ Feed stopped');
+}
+
+function resetAll() {
+  stopAll();
+  pd.psi._history = [];
+  pd.psi._rho = 1.0;
+  pd.psi.baseline = { mu: 0.15, sigma2: 0.04 };
+  pd.pgu.total = 0;
+  pd.omega.omega = 1;
+  pd.omega.zeta = 0;
+  tick = 0; alertCount = 0; critCount = 0;
+  chartData.length = 0;
+  eventLog.length = 0;
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('timeline').innerHTML = '';
+  document.getElementById('tick').textContent = '0';
+  document.getElementById('alert-count').textContent = '0';
+  document.getElementById('crit-count').textContent = '0';
+  document.getElementById('last-alert').textContent = '—';
+  drawChart();
+  addLogInfo('↺ System reset');
+}
+
+function exportLog() {
+  const header = `ASPIDOS SESSION LOG\nSession Start: ${fmtISO(SESSION_START)}\nExported: ${fmtISO(new Date())}\nTotal Events: ${eventLog.length}\n\n`;
+  const cols = 'ISO_TIME,ELAPSED,TICK,DELTA_PSI,SCORE,ANOMALY,PGU_LEVEL,PGU_RATIO,OMEGA_PHASE,OMEGA_VAL,ALERT\n';
+  const rows = eventLog.map(e =>
+    `${e.iso},${e.elapsed},${e.tick},${e.deltaPsi},${e.score},${e.anomaly},${e.pgu},${e.pguRatio},${e.omega},${e.omegaVal},${e.alert}`
+  ).join('\n');
+  const blob = new Blob([header + cols + rows], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `aspidos-${SESSION_START.toISOString().slice(0,19).replace(/:/g,'-')}.csv`;
+  a.click();
+}
+
+// Init
+addLogInfo(`🛡 Aspidos v1.1.0-ts initialized at ${fmtTime(SESSION_START)}`);
+addLogInfo('Select feed mode to begin monitoring');
+drawChart();
+window.addEventListener('resize', drawChart);
+</script>
+</body>
+</html>

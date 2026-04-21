@@ -58,6 +58,7 @@
   let attackParticles = [];
   let burstEffects = [];
   let shieldIntegrity = 1.0;
+  let currentIntensity = 0;   // 現在の危険度を保持
 
   const attackPatterns = {
     normal:  { color: "#88ffcc", intensity: 0.4, penetration: 0.08, count: 7 },
@@ -66,34 +67,34 @@
     stealth: { color: "#bb77ff", intensity: 0.9, penetration: 0.40, count: 18 }
   };
 
-  function createFluidLayer(count = 75) {
+  function createFluidLayer(count = 55) {
     fluidParticles = [];
     for (let i = 0; i < count; i++) {
       fluidParticles.push({
-        x: w/2 + (Math.random()-0.5)*240,
-        y: h/2 + (Math.random()-0.5)*240,
-        vx: (Math.random()-0.5)*0.9,
-        vy: (Math.random()-0.5)*0.9,
-        size: 1.6 + Math.random()*1.8,
-        hue: 175 + Math.random()*45,
-        baseCount: count
+        x: w/2 + (Math.random()-0.5)*260,
+        y: h/2 + (Math.random()-0.5)*260,
+        vx: (Math.random()-0.5)*0.8,
+        vy: (Math.random()-0.5)*0.8,
+        size: 1.5 + Math.random()*1.7,
+        hue: 175 + Math.random()*50
       });
     }
   }
 
-  function updateFluidCount(intensity) {
-    const target = Math.floor(65 + intensity * 95); // 危険度で増える
-    if (fluidParticles.length < target - 10) {
-      for (let i = 0; i < 8; i++) {
-        fluidParticles.push({
-          x: w/2 + (Math.random()-0.5)*200,
-          y: h/2 + (Math.random()-0.5)*200,
-          vx: (Math.random()-0.5)*1.1,
-          vy: (Math.random()-0.5)*1.1,
-          size: 1.5 + Math.random()*2,
-          hue: 175 + Math.random()*45
-        });
-      }
+  function updateFluidCount(targetCount) {
+    while (fluidParticles.length < targetCount && fluidParticles.length < 140) {
+      fluidParticles.push({
+        x: w/2 + (Math.random()-0.5)*220,
+        y: h/2 + (Math.random()-0.5)*220,
+        vx: (Math.random()-0.5)*1.0,
+        vy: (Math.random()-0.5)*1.0,
+        size: 1.6 + Math.random()*1.8,
+        hue: 175 + Math.random()*50
+      });
+    }
+    // 少しずつ減らす（Normalに戻ったとき）
+    if (fluidParticles.length > targetCount + 20) {
+      fluidParticles.splice(0, 8);
     }
   }
 
@@ -101,14 +102,14 @@
     const p = attackPatterns[pattern];
     for (let i = 0; i < p.count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const dist = 220 + Math.random() * 160;
+      const dist = 230 + Math.random() * 150;
       attackParticles.push({
         x: cx + Math.cos(angle) * dist,
         y: cy + Math.sin(angle) * dist,
-        vx: -Math.cos(angle) * (4 + p.intensity * 7),
-        vy: -Math.sin(angle) * (4 + p.intensity * 7),
-        life: 110,
-        size: 3.5,
+        vx: -Math.cos(angle) * (4.2 + p.intensity * 7),
+        vy: -Math.sin(angle) * (4.2 + p.intensity * 7),
+        life: 115,
+        size: 3.6,
         color: p.color,
         hit: false
       });
@@ -116,23 +117,21 @@
   }
 
   function createBurstEffect(cx, cy, power = 1) {
-    const num = 25 + Math.floor(power * 18);
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < 28 + power * 15; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 1.8 + Math.random() * (4 + power * 3);
       burstEffects.push({
         x: cx, y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 32 + Math.random() * 35,
-        size: 2 + Math.random() * 2.2,
-        hue: Math.random() > 0.5 ? 190 : 325
+        vx: Math.cos(angle) * (2 + Math.random() * 5.5),
+        vy: Math.sin(angle) * (2 + Math.random() * 5.5),
+        life: 34 + Math.random() * 38,
+        size: 2.1 + Math.random() * 2,
+        hue: Math.random() > 0.5 ? 190 : 330
       });
     }
   }
 
   function updateUI(result) {
-    const intensity = Math.min(2.0, result.score * 2.5);
+    currentIntensity = Math.min(2.0, result.score * 2.4);
 
     document.getElementById('status').textContent = 
       `STEALTH: ${result.stealth.toFixed(1)}　｜　LEVEL: ${result.level}　｜　INTEGRITY: ${(shieldIntegrity*100).toFixed(0)}%`;
@@ -144,27 +143,29 @@
       PGU: ${result.pguRatio}
     `;
 
-    ctx.fillStyle = 'rgba(3,3,12,0.16)';
+    ctx.fillStyle = 'rgba(3,3,12,0.15)';
     ctx.fillRect(0, 0, w, h);
 
     const cx = w / 2;
     const cy = h / 2;
 
-    // 危険度に応じて流体量を調整
-    updateFluidCount(intensity);
+    // 危険度に応じて流体量を調整（Normal時は控えめ）
+    const targetFluid = currentIntensity > 0.8 ? 
+      Math.floor(65 + currentIntensity * 85) : 55;
+    updateFluidCount(targetFluid);
 
-    // 流体粒子（控えめバージョン）
+    // 流体粒子
     for (let i = 0; i < fluidParticles.length; i++) {
       const p = fluidParticles[i];
-      p.x += p.vx + Math.sin(Date.now()/400 + i) * 0.45;
-      p.y += p.vy + Math.cos(Date.now()/520 + i) * 0.35;
-      p.vx *= 0.982;
-      p.vy *= 0.982;
-      p.vx += (cx - p.x) * 0.0009;
-      p.vy += (cy - p.y) * 0.0009;
+      p.x += p.vx + Math.sin(Date.now()/450 + i) * 0.4;
+      p.y += p.vy + Math.cos(Date.now()/580 + i) * 0.3;
+      p.vx *= 0.983;
+      p.vy *= 0.983;
+      p.vx += (cx - p.x) * 0.00085;
+      p.vy += (cy - p.y) * 0.00085;
 
-      ctx.globalAlpha = 0.55 + Math.sin(Date.now()/300 + i) * 0.25;
-      ctx.fillStyle = `hsl(${p.hue}, 85%, 82%)`;
+      ctx.globalAlpha = 0.5 + Math.sin(Date.now()/350 + i) * 0.25;
+      ctx.fillStyle = `hsl(${p.hue}, 88%, 80%)`;
       ctx.fillRect(p.x, p.y, p.size, p.size);
     }
     ctx.globalAlpha = 1.0;
@@ -178,15 +179,15 @@
 
       const dist = Math.hypot(p.x - cx, p.y - cy);
 
-      if (dist < 125 + result.omega * 55 && !p.hit) {
+      if (dist < 128 && !p.hit) {
         p.hit = true;
-        p.vx *= -0.3;
-        createBurstEffect(p.x, p.y, intensity * 0.7);
-        shieldIntegrity = Math.max(0.38, shieldIntegrity - 0.029);
+        p.vx *= -0.28;
+        createBurstEffect(p.x, p.y, currentIntensity * 0.8);
+        shieldIntegrity = Math.max(0.35, shieldIntegrity - 0.027);
       }
 
       if (p.life > 0) {
-        ctx.globalAlpha = p.life / 125;
+        ctx.globalAlpha = p.life / 130;
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
       } else {
@@ -195,20 +196,20 @@
     }
     ctx.globalAlpha = 1;
 
-    // 爆散エフェクト（控えめ）
+    // 爆散エフェクト
     for (let i = burstEffects.length - 1; i >= 0; i--) {
       const e = burstEffects[i];
       e.x += e.vx; e.y += e.vy;
-      e.vx *= 0.94; e.vy *= 0.94;
+      e.vx *= 0.935; e.vy *= 0.935;
       e.life--;
-      ctx.globalAlpha = Math.max(0, e.life / 50);
-      ctx.fillStyle = `hsl(${e.hue}, 100%, 88%)`;
+      ctx.globalAlpha = e.life / 52;
+      ctx.fillStyle = `hsl(${e.hue}, 100%, 87%)`;
       ctx.fillRect(e.x, e.y, e.size, e.size);
       if (e.life <= 0) burstEffects.splice(i, 1);
     }
     ctx.globalAlpha = 1.0;
 
-    shieldIntegrity = Math.min(1.0, shieldIntegrity + 0.0038);
+    shieldIntegrity = Math.min(1.0, shieldIntegrity + 0.0037);
   }
 
   let timer = null;
@@ -216,9 +217,9 @@
   window.startNormal = () => {
     stopAll();
     timer = setInterval(() => {
-      const r = core.step(Math.random() * 0.6);
+      const r = core.step(Math.random() * 0.58);
       updateUI(r);
-    }, 210);
+    }, 220);
   };
 
   window.startAttack = (type = "spike") => {
@@ -226,11 +227,11 @@
     const pat = attackPatterns[type];
     timer = setInterval(() => {
       for (let i = 0; i < 8; i++) {
-        core.step(0.65 + Math.random() * pat.intensity, { penetration: pat.penetration });
+        core.step(0.68 + Math.random() * pat.intensity, { penetration: pat.penetration });
       }
       updateUI(core.step(0.75));
       createAttackParticles(w/2, h/2, type);
-    }, 160);
+    }, 158);
   };
 
   window.stopAll = () => {
@@ -242,13 +243,15 @@
   window.startBurst   = () => startAttack("burst");
   window.startStealth = () => startAttack("stealth");
 
+  // 起動
   setTimeout(() => {
-    createFluidLayer(75);
+    createFluidLayer(55);   // Normalスタートは控えめ
     startNormal();
-  }, 200);
+  }, 250);
 
-  console.log('%cAspidos Fluid Defense - Adjusted (千本桜控えめモード)', 'color:#aaffff');
+  console.log('%cAspidos - 千本桜調整版 (攻撃をしっかり食うモード)', 'color:#aaffff');
 </script>
+
   
 </body>
 </html>

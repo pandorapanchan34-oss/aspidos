@@ -38,7 +38,8 @@
     <button onclick="stopAll()">Pause</button>
   </div>
 
-  <script type="module">
+  
+   <script type="module">
   import { AspidosCore } from '../src/aspidos.js';
 
   const core = new AspidosCore();
@@ -67,45 +68,45 @@
     stealth: { color: "#bb77ff", intensity: 0.85, penetration: 0.37, count: 17 }
   };
 
-  function createFluidLayer(count = 45) {
+  function createFluidLayer(count = 48) {
     fluidParticles = [];
     for (let i = 0; i < count; i++) {
       fluidParticles.push({
-        x: w/2 + (Math.random()-0.5)*230,
-        y: h/2 + (Math.random()-0.5)*230,
-        vx: (Math.random()-0.5)*0.75,
-        vy: (Math.random()-0.5)*0.75,
-        size: 1.4 + Math.random()*1.6,
-        hue: 172 + Math.random()*48
+        x: w/2 + (Math.random()-0.5)*250,
+        y: h/2 + (Math.random()-0.5)*250,
+        vx: (Math.random()-0.5)*0.8,
+        vy: (Math.random()-0.5)*0.8,
+        size: 1.45 + Math.random()*1.55,
+        hue: 175 + Math.random()*45
       });
     }
   }
 
   function updateFluidCount(target) {
-    while (fluidParticles.length < target && fluidParticles.length < 100) {
+    while (fluidParticles.length < target && fluidParticles.length < 105) {
       fluidParticles.push({
-        x: w/2 + (Math.random()-0.5)*190,
-        y: h/2 + (Math.random()-0.5)*190,
+        x: w/2 + (Math.random()-0.5)*200,
+        y: h/2 + (Math.random()-0.5)*200,
         vx: (Math.random()-0.5)*0.9,
         vy: (Math.random()-0.5)*0.9,
-        size: 1.45 + Math.random()*1.65,
-        hue: 172 + Math.random()*48
+        size: 1.5 + Math.random()*1.6,
+        hue: 175 + Math.random()*45
       });
     }
-    if (fluidParticles.length > target + 28) fluidParticles.splice(0, 6);
+    if (fluidParticles.length > target + 25) fluidParticles.splice(0, 7);
   }
 
   function createAttackParticles(cx, cy, pattern) {
     const p = attackPatterns[pattern];
     for (let i = 0; i < p.count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const dist = 290 + Math.random() * 150;
+      const dist = 275 + Math.random() * 160;
       attackParticles.push({
         x: cx + Math.cos(angle) * dist,
         y: cy + Math.sin(angle) * dist,
-        vx: -Math.cos(angle) * (2.3 + p.intensity * 3.6),
-        vy: -Math.sin(angle) * (2.3 + p.intensity * 3.6),
-        life: 85,
+        vx: -Math.cos(angle) * (2.4 + p.intensity * 3.7),
+        vy: -Math.sin(angle) * (2.4 + p.intensity * 3.7),
+        life: 88,
         size: 3.5,
         color: p.color,
         hit: false
@@ -114,45 +115,45 @@
   }
 
   function createBurstEffect(cx, cy, power = 1) {
-    for (let i = 0; i < 20 + power * 14; i++) {
+    for (let i = 0; i < 20 + power * 13; i++) {
       const angle = Math.random() * Math.PI * 2;
       burstEffects.push({
         x: cx, y: cy,
-        vx: Math.cos(angle) * (1.7 + Math.random() * 5),
-        vy: Math.sin(angle) * (1.7 + Math.random() * 5),
-        life: 29 + Math.random() * 33,
-        size: 2 + Math.random() * 2.1,
-        hue: Math.random() > 0.5 ? 188 : 328
+        vx: Math.cos(angle) * (1.8 + Math.random() * 5),
+        vy: Math.sin(angle) * (1.8 + Math.random() * 5),
+        life: 30 + Math.random() * 32,
+        size: 2 + Math.random() * 2,
+        hue: Math.random() > 0.5 ? 190 : 330
       });
     }
   }
 
   function drawCore(cx, cy, result) {
-    const pulse = Math.sin(Date.now() / 180) * 0.1 + 1;
-    const coreSize = 28 + result.omega * 18 + (shieldIntegrity * 12);
+    const pulse = Math.sin(Date.now() / 200) * 0.08 + 1.0;
+    const coreSize = 14 + result.omega * 8;   // ← ここを大幅に小さく調整
 
-    // 本体のグロー（最強感）
-    const grad = ctx.createRadialGradient(cx, cy, 8, cx, cy, coreSize * 1.8);
-    grad.addColorStop(0, '#aaffff');
-    grad.addColorStop(0.4, '#66ddff');
+    // 本体の柔らかいグロー（控えめ）
+    ctx.save();
+    ctx.globalAlpha = 0.35 + shieldIntegrity * 0.25;
+    const grad = ctx.createRadialGradient(cx, cy, coreSize * 0.6, cx, cy, coreSize * 3.2);
+    grad.addColorStop(0, '#ffffff');
     grad.addColorStop(1, 'transparent');
     ctx.fillStyle = grad;
-    ctx.globalAlpha = 0.45 + shieldIntegrity * 0.35;
     ctx.beginPath();
-    ctx.arc(cx, cy, coreSize * 1.9, 0, Math.PI * 2);
+    ctx.arc(cx, cy, coreSize * 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 本体本体（これが一番目立つ）
+    ctx.fillStyle = '#ccffff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, coreSize * pulse, 0, Math.PI * 2);
     ctx.fill();
 
-    // 本体本体
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = '#aaffff';
-    ctx.beginPath();
-    ctx.arc(cx, cy, coreSize, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 中心の光
+    // 中心の極小光点
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(cx, cy, 9 + pulse * 3, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -169,28 +170,28 @@
       PGU: ${result.pguRatio}
     `;
 
-    ctx.fillStyle = 'rgba(3,3,12,0.13)';
+    ctx.fillStyle = 'rgba(3,3,12,0.14)';
     ctx.fillRect(0, 0, w, h);
 
     const cx = w / 2;
     const cy = h / 2;
 
-    const targetFluid = currentIntensity > 0.7 ? 
-      Math.floor(52 + currentIntensity * 65) : 46;
+    const targetFluid = currentIntensity > 0.75 ? 
+      Math.floor(50 + currentIntensity * 70) : 46;
 
     updateFluidCount(targetFluid);
 
-    // 流体粒子（本体を補強する役割）
+    // 流体粒子
     for (let p of fluidParticles) {
-      p.x += p.vx + Math.sin(Date.now()/500 + p.x) * 0.3;
-      p.y += p.vy + Math.cos(Date.now()/650 + p.y) * 0.25;
+      p.x += p.vx + Math.sin(Date.now()/520) * 0.35;
+      p.y += p.vy + Math.cos(Date.now()/670) * 0.28;
       p.vx *= 0.985;
       p.vy *= 0.985;
-      p.vx += (cx - p.x) * 0.0008;
-      p.vy += (cy - p.y) * 0.0008;
+      p.vx += (cx - p.x) * 0.00078;
+      p.vy += (cy - p.y) * 0.00078;
 
-      ctx.globalAlpha = 0.42 + Math.sin(Date.now()/400) * 0.2;
-      ctx.fillStyle = `hsl(${p.hue}, 85%, 78%)`;
+      ctx.globalAlpha = 0.45 + Math.sin(Date.now()/410) * 0.2;
+      ctx.fillStyle = `hsl(${p.hue}, 88%, 79%)`;
       ctx.fillRect(p.x, p.y, p.size, p.size);
     }
     ctx.globalAlpha = 1.0;
@@ -203,13 +204,11 @@
       p.vy *= 0.968;
       p.life--;
 
-      const dist = Math.hypot(p.x - cx, p.y - cy);
-
-      if (dist < 155 && !p.hit) {
+      if (Math.hypot(p.x - cx, p.y - cy) < 158 && !p.hit) {
         p.hit = true;
-        p.vx *= -0.25;
-        createBurstEffect(p.x, p.y, currentIntensity * 0.65);
-        shieldIntegrity = Math.max(0.34, shieldIntegrity - 0.024);
+        p.vx *= -0.24;
+        createBurstEffect(p.x, p.y, currentIntensity * 0.7);
+        shieldIntegrity = Math.max(0.35, shieldIntegrity - 0.025);
       }
 
       if (p.life > 0) {
@@ -228,17 +227,17 @@
       e.x += e.vx; e.y += e.vy;
       e.vx *= 0.94; e.vy *= 0.94;
       e.life--;
-      ctx.globalAlpha = e.life / 52;
-      ctx.fillStyle = `hsl(${e.hue}, 100%, 86%)`;
+      ctx.globalAlpha = e.life / 50;
+      ctx.fillStyle = `hsl(${e.hue}, 100%, 87%)`;
       ctx.fillRect(e.x, e.y, e.size, e.size);
       if (e.life <= 0) burstEffects.splice(i, 1);
     }
     ctx.globalAlpha = 1.0;
 
-    // 本体（最強コア）
+    // 本体（サイズを大幅に抑えた）
     drawCore(cx, cy, result);
 
-    shieldIntegrity = Math.min(1.0, shieldIntegrity + 0.0039);
+    shieldIntegrity = Math.min(1.0, shieldIntegrity + 0.0038);
   }
 
   let timer = null;
@@ -246,7 +245,7 @@
   window.startNormal = () => {
     stopAll();
     timer = setInterval(() => {
-      const r = core.step(Math.random() * 0.55);
+      const r = core.step(Math.random() * 0.56);
       updateUI(r);
     }, 230);
   };
@@ -256,7 +255,7 @@
     const pat = attackPatterns[type];
     timer = setInterval(() => {
       for (let i = 0; i < 8; i++) {
-        core.step(0.66 + Math.random() * pat.intensity, { penetration: pat.penetration });
+        core.step(0.67 + Math.random() * pat.intensity, { penetration: pat.penetration });
       }
       updateUI(core.step(0.8));
       createAttackParticles(w/2, h/2, type);
@@ -277,9 +276,8 @@
     startNormal();
   }, 200);
 
-  console.log('%cAspidos - 本体最強モード完成', 'color:#aaffff');
+  console.log('%cAspidos - 本体サイズ調整版 (スーパーサイヤ人ゴッド抑えめ)', 'color:#aaffff');
 </script>
-   
   
   
 </body>

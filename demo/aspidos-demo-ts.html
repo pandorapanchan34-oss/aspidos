@@ -38,8 +38,7 @@
     <button onclick="stopAll()">Pause</button>
   </div>
 
-  
-   <script type="module">
+  <script type="module">
   import { AspidosCore } from '../src/aspidos.js';
 
   const core = new AspidosCore();
@@ -128,32 +127,34 @@
     }
   }
 
+  // 本体描画（サイズほぼ固定 + グロー半分以下）
   function drawCore(cx, cy, result) {
-    const pulse = Math.sin(Date.now() / 200) * 0.08 + 1.0;
-    const coreSize = 14 + result.omega * 8;   // ← ここを大幅に小さく調整
+    const pulse = Math.sin(Date.now() / 220) * 0.06 + 1.0;
+    const coreSize = 16 + result.omega * 3.5;   // omegaの影響を大幅に弱く
 
-    // 本体の柔らかいグロー（控えめ）
+    // 控えめなグロー（半分以下）
     ctx.save();
-    ctx.globalAlpha = 0.35 + shieldIntegrity * 0.25;
-    const grad = ctx.createRadialGradient(cx, cy, coreSize * 0.6, cx, cy, coreSize * 3.2);
+    ctx.globalAlpha = 0.22 + shieldIntegrity * 0.18;   // かなり抑えめ
+    const grad = ctx.createRadialGradient(cx, cy, coreSize * 0.8, cx, cy, coreSize * 4.5);
     grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.6, '#88eeff');
     grad.addColorStop(1, 'transparent');
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(cx, cy, coreSize * 3.2, 0, Math.PI * 2);
+    ctx.arc(cx, cy, coreSize * 4.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // 本体本体（これが一番目立つ）
-    ctx.fillStyle = '#ccffff';
+    // 本体
+    ctx.fillStyle = '#bbffff';
     ctx.beginPath();
     ctx.arc(cx, cy, coreSize * pulse, 0, Math.PI * 2);
     ctx.fill();
 
-    // 中心の極小光点
+    // 中心の強い光点
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 6.5, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -177,21 +178,21 @@
     const cy = h / 2;
 
     const targetFluid = currentIntensity > 0.75 ? 
-      Math.floor(50 + currentIntensity * 70) : 46;
+      Math.floor(50 + currentIntensity * 68) : 46;
 
     updateFluidCount(targetFluid);
 
     // 流体粒子
     for (let p of fluidParticles) {
-      p.x += p.vx + Math.sin(Date.now()/520) * 0.35;
-      p.y += p.vy + Math.cos(Date.now()/670) * 0.28;
+      p.x += p.vx + Math.sin(Date.now()/520 + p.x) * 0.32;
+      p.y += p.vy + Math.cos(Date.now()/670 + p.y) * 0.25;
       p.vx *= 0.985;
       p.vy *= 0.985;
       p.vx += (cx - p.x) * 0.00078;
       p.vy += (cy - p.y) * 0.00078;
 
-      ctx.globalAlpha = 0.45 + Math.sin(Date.now()/410) * 0.2;
-      ctx.fillStyle = `hsl(${p.hue}, 88%, 79%)`;
+      ctx.globalAlpha = 0.44 + Math.sin(Date.now()/410) * 0.19;
+      ctx.fillStyle = `hsl(${p.hue}, 85%, 78%)`;
       ctx.fillRect(p.x, p.y, p.size, p.size);
     }
     ctx.globalAlpha = 1.0;
@@ -204,7 +205,7 @@
       p.vy *= 0.968;
       p.life--;
 
-      if (Math.hypot(p.x - cx, p.y - cy) < 158 && !p.hit) {
+      if (Math.hypot(p.x - cx, p.y - cy) < 155 && !p.hit) {
         p.hit = true;
         p.vx *= -0.24;
         createBurstEffect(p.x, p.y, currentIntensity * 0.7);
@@ -228,16 +229,16 @@
       e.vx *= 0.94; e.vy *= 0.94;
       e.life--;
       ctx.globalAlpha = e.life / 50;
-      ctx.fillStyle = `hsl(${e.hue}, 100%, 87%)`;
+      ctx.fillStyle = `hsl(${e.hue}, 100%, 86%)`;
       ctx.fillRect(e.x, e.y, e.size, e.size);
       if (e.life <= 0) burstEffects.splice(i, 1);
     }
     ctx.globalAlpha = 1.0;
 
-    // 本体（サイズを大幅に抑えた）
+    // 本体描画（サイズ抑えめ）
     drawCore(cx, cy, result);
 
-    shieldIntegrity = Math.min(1.0, shieldIntegrity + 0.0038);
+    shieldIntegrity = Math.min(1.0, shieldIntegrity + 0.0039);
   }
 
   let timer = null;
@@ -276,8 +277,10 @@
     startNormal();
   }, 200);
 
-  console.log('%cAspidos - 本体サイズ調整版 (スーパーサイヤ人ゴッド抑えめ)', 'color:#aaffff');
+  console.log('%cAspidos - 本体サイズ固定＋グロー控えめ版', 'color:#aaffff');
 </script>
+   
+
   
   
 </body>

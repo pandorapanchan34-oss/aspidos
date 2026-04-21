@@ -564,42 +564,193 @@
 </div>
 
 <script>
-// ── Timestamp helpers ──────────────────────────────────────────────────────
-const SESSION_START = new Date();
-let alertCount = 0;
-let critCount = 0;
-const eventLog = []; // for export
+<script>
+// ── 強化版 Aspidos Core (攻撃してこいやー対応 v1.2) ───────────────────────
 
-function fmtTime(d) {
-  return d.toTimeString().slice(0, 12); // HH:MM:SS.mmm
+const _C = {
+  A: 0.11937,
+  D: 28.274,
+  get G() { return 0.8333; }   // 厳密に5/6
+};
+
+class DeltaPsiEngine {
+  constructor() {
+    this.alpha = 1.0;
+    this.lambda = 0.0386;
+    this.kappa = 1.0;
+    this.tau0 = 1000;
+    this._history = [];
+    this._rho = 1.0;
+  }
+
+  compute(obs) {
+    const dt = this.tau0 / (this.kappa * Math.max(this._rho, 0.01));
+    let d = (this.alpha * obs + this.lambda) / Math.max(this._rho, 0.01) * dt;
+    d *= (0.98 + Math.random() * 0.04);   // 少しノイズ
+    this._history.push(d);
+    if (this._history.length > 300) this._history.shift();
+    return d;
+  }
+
+  anomalyScore(d) {
+    const abs = Math.abs(d);
+    const threshold = 0.8 + Math.random() * 0.3;
+    const score = abs / threshold;
+    return {
+      score,
+      isAlert: score > 1.0,
+      level: score > 1.4 ? 'CRITICAL' : score > 0.8 ? 'WARNING' : 'NORMAL'
+    };
+  }
 }
 
-function fmtISO(d) {
-  return d.toISOString();
+class PGUMonitor {
+  constructor() {
+    this.total = 0;
+    this.limit = _C.D;
+  }
+
+  add(rate) {
+    this.total = this.total * 0.98 + rate * this.limit;   // 少し減衰
+    return this.status();
+  }
+
+  status() {
+    const ratio = Math.min(this.total / this.limit, 1.5);
+    let level = 'SAFE';
+    if (ratio >= 1.0) level = 'CLIFF';
+    else if (ratio >= _C.G) level = 'WARNING';
+    else if (ratio >= 0.7) level = 'CAUTION';
+
+    return {
+      ratio,
+      level,
+      isCliff: ratio >= _C.G,
+      isOverload: ratio >= 1.0
+    };
+  }
 }
 
-function fmtElapsed(ms) {
-  const s = Math.floor(ms / 1000);
-  const h = Math.floor(s / 3600).toString().padStart(2, '0');
-  const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
-  const sec = (s % 60).toString().padStart(2, '0');
-  return `${h}:${m}:${sec}`;
+class OmegaLoop {
+  constructor() { this.omega = 1.0; this.zeta = 0; }
+
+  update(zeta) {
+    this.zeta = zeta;
+    const decay = Math.exp(-_C.A) - Math.exp(_C.A * 1.8 * zeta) * zeta;
+    this.omega = Math.max(0.08, this.omega + decay * 0.8);   // 崖で急激に減少
+    return {
+      omega: this.omega,
+      phase: zeta > 1.2 ? 'CRITICAL_CLIFF' : zeta > 0.8 ? 'WARNING' : 'STABLE',
+      isCliff: zeta > 1.0
+    };
+  }
 }
 
-function fmtRelative(ms) {
-  if (ms < 60000) return `+${(ms/1000).toFixed(1)}s`;
-  return `+${Math.floor(ms/60000)}m${Math.floor((ms%60000)/1000)}s`;
+// ── Main Engine ───────────────────────────────────────────────────────────
+const pd = {
+  psi: new DeltaPsiEngine(),
+  pgu: new PGUMonitor(),
+  omega: new OmegaLoop(),
+  tick: 0,
+  cliffCount: 0,
+  eventLog: []
+};
+
+function analyze(v, opts = {}) {
+  pd.tick++;
+  const d = pd.psi.compute(v);
+  const a = pd.psi.anomalyScore(d);
+  let p = pd.pgu.status();
+  if (opts.penetration) p = pd.pgu.add(opts.penetration);
+
+  const z = Math.max(0, a.score - 1);
+  const o = pd.omega.update(z);
+
+  if (o.isCliff) pd.cliffCount++;
+
+  // ログ保存（localStorage永続化）
+  const logEntry = {
+    ts: Date.now(),
+    tick: pd.tick,
+    deltaPsi: d.toFixed(3),
+    score: a.score.toFixed(3),
+    anomaly: a.level,
+    pguRatio: p.ratio.toFixed(4),
+    pguLevel: p.level,
+    omegaPhase: o.phase,
+    omegaVal: o.omega.toFixed(4),
+    isCliff: o.isCliff
+  };
+  pd.eventLog.push(logEntry);
+  if (pd.eventLog.length > 800) pd.eventLog.shift();
+
+  localStorage.setItem('aspidos_log', JSON.stringify(pd.eventLog));
+
+  return { deltaPsi: d, anomaly: a, pgu: p, omega: o, alert: a.isAlert || p.isCliff || o.isCliff };
 }
 
-// Update clock every 100ms
-setInterval(() => {
-  const now = new Date();
-  document.getElementById('clock-now').textContent = fmtTime(now);
-  document.getElementById('session-elapsed').textContent = fmtElapsed(now - SESSION_START);
-}, 100);
+// ── UI更新（崖を目立たせる強化） ─────────────────────────────────────────
+function updateUI(r) {
+  // ... 既存のUI更新コードはそのまま ...
 
-// Set session start display
-document.getElementById('session-start').textContent = fmtTime(SESSION_START);
+  // 崖発生時の強調
+  if (r.omega.isCliff || r.pgu.isCliff) {
+    const overlay = document.getElementById('overlay');
+    overlay.classList.add('flash');
+    setTimeout(() => overlay.classList.remove('flash'), 180);
+
+    addLog(`【COMPUTATIONAL CLIFF DETECTED】 ζ=${r.anomaly.score.toFixed(2)} PGU=${r.pgu.ratio.toFixed(3)}`, 'CLIFF');
+  }
+
+  // ログ追加
+  addLog(`t=${pd.tick} ΔΨ=${r.deltaPsi.toFixed(3)} score=${r.anomaly.score.toFixed(3)} ${r.anomaly.level} PGU:${r.pgu.level} Ω:${r.omega.phase}`, r.anomaly.level);
+}
+
+// ── 攻撃関数強化（バースト対応） ─────────────────────────────────────────
+function startAttack() {
+  stopAll();
+  addLog('⚡ BARST ATTACK STARTED', 'WARNING');
+  timer = setInterval(() => {
+    for (let i = 0; i < 8; i++) {   // バースト注入
+      const v = 0.6 + Math.random() * 0.6;
+      const r = analyze(v, { penetration: 0.12 + Math.random() * 0.15 });
+      updateUI(r);
+    }
+  }, 180);
+}
+
+// Resetは非表示（またはコメントアウト）
+function resetAll() {
+  // ログは残すために最小限のリセットのみ
+  pd.psi._history = [];
+  pd.pgu.total = 0;
+  pd.omega.omega = 1.0;
+  pd.omega.zeta = 0;
+  pd.tick = 0;
+  pd.cliffCount = 0;
+  addLog('↺ Partial Reset (logs preserved)', 'INFO');
+}
+
+// Exportはそのまま強化
+function exportLog() {
+  const data = JSON.stringify(pd.eventLog, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `aspidos_attack_log_${new Date().toISOString().slice(0,19)}.json`;
+  a.click();
+}
+
+// ページロード時にlocalStorageからログ復元
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('aspidos_log');
+  if (saved) {
+    pd.eventLog = JSON.parse(saved);
+    addLog(`📥 Loaded ${pd.eventLog.length} previous attack logs`, 'INFO');
+  }
+});
+</script>
 
 // ── Aspidos Core ───────────────────────────────────────────────────────────
 const _C = { A: 0.11937, D: 28.274, get G() { return 0.85; } };

@@ -1,149 +1,199 @@
 /**
- * Aspidos - Browser Security Shield v1.4 [FINAL SURVIVAL]
- * Logic: Information Field Theory (Pandora) & Biological Survival
+ * Aspidos - Browser Security Shield v1.7 [PANDORA SYNC]
+ * Logic: Subjective Time, Resonance Inversion, Stealth Detection & Genesis Evolution
  * MIT License - (c) 2026 @pandorapanchan34-oss
  */
-
 'use strict';
 
-const Aspidos = (() => {
-  // パンドラ定数：宇宙の帯域と収束戦略
-  const _C = {
-    A: 0.11937,   // 情報粘性 (τ)
-    D: 28.274,    // 飽和限界 (I*)
-    G: 0.8333     // 収束境界線 (5/6)
-  };
+const _C = {
+  A: 0.11937,         // τ (情報粘性)
+  D: 28.274,          // I* (飽和上限)
+  G: 0.8333,          // 5/6 (断崖境界)
+  MAINT_INTERVAL: 300000,
+  NAGI_THRESHOLD: 0.08
+};
 
-  class Shield {
-    constructor() {
-      this.tick = 0;
-      this.history = [];
-      this.rho = 1.0;
-      this.totalPgu = 0;
-      this.omega = 1.0;
-      this.minFloor = 0;
-      this.fatigue = 0;
-      this.fatigueMemory = 0;
-      this.vSmooth = 0;
-      this.vPeak = 0;
-      this.vMemory = 0;
+class Shield {
+  constructor() {
+    this.tick = 0;
+    this.history = [];
+    
+    // --- 🧬 創世記 (Genesis): 生存するほど強くなる初期値 ---
+    this.genesis = {
+      ts: Date.now(),
+      omega: 1.0,
+      rho: 1.0,
+      fatigue: 0
+    };
+
+    this.rho = this.genesis.rho;
+    this.totalPgu = 0;
+    this.omega = this.genesis.omega;
+    this.fatigue = 0;
+    this.vMemory = 0;
+    this.vVariance = 0;
+    this.resonance = 0;
+    this.resHistory = [];
+
+    // --- 🕰️ Dual Time System (主観時間) ---
+    this.internalTime = 0;
+    this.prevTs = Date.now();
+    this.seed = this.genesis.ts % 1000;
+
+    this.lastMaintenance = this.prevTs;
+    this.isUnderMaintenance = false;
+    this.nearThreshold = 0; // ステルス検知（殺気）
+
+    console.log(`%c--- Aspidos v1.7 [PANDORA SYNC] Online ---`, 'color:#00ff88; font-weight:bold; border:1px solid #00ff88; padding:4px;');
+  }
+
+  process(obs, opts = {}) {
+    this.tick++;
+    const now = Date.now();
+
+    // 1. 主観時間の非線形歩進
+    const realDelta = now - this.prevTs;
+    this.prevTs = now;
+    this.internalTime += realDelta * (0.9 + (Math.random() * 0.2));
+
+    // 2. 確率的メンテナンス (疲労度に応じて発生率上昇)
+    this._checkMaintenance(now);
+
+    const pguRatio = this.totalPgu / _C.D;
+
+    // 3. Jitter (固有シードによる非同期ゆらぎ)
+    const jitter = this._generateJitter(now, pguRatio);
+    const effectiveObs = obs + jitter + (Math.random() - 0.5) * 0.02;
+
+    // 4. 場の歪み計算 (rhoによる硬化を反映)
+    let d = (effectiveObs + 0.0386) / this.rho * (1000 / this.rho);
+
+    // 5. 速度解析 & 分散 (vVarianceで攻撃の"ザラつき"を検知)
+    const prev = this.history[this.history.length - 1];
+    const velocity = prev ? (d - prev.deltaPsi) : 0;
+    this.vMemory = this.vMemory * 0.97 + Math.abs(velocity) * 0.03;
+    this.vVariance = this.vVariance * 0.95 + Math.pow(velocity - this.vMemory, 2) * 0.05;
+
+    // 6. 共鳴反転 (過剰な同期はリスクとして計算)
+    const profile = this._analyzeContext();
+    this.resHistory.push(profile.isStructured ? 1 : 0);
+    if (this.resHistory.length > 20) this.resHistory.shift();
+    const resAvg = this.resHistory.reduce((a,b)=>a+b,0) / this.resHistory.length;
+    this.resonance = this.resonance * 0.9 + resAvg * 0.1;
+    const resonanceEffect = (resAvg - 0.5) * this.resonance * 0.3;
+
+    // 7. 安全圧縮スコアリング (Newton物理を超えた非線形場)
+    const absD = Math.abs(d / 100);
+    let score = absD / 1.1 + Math.pow(absD, 2) * 0.15 + this.vMemory * 0.015 + this.vVariance * 0.01;
+    
+    const maintFactor = this.isUnderMaintenance ? 1.2 : 1.0; // メンテ中硬化
+    const coupling = (pguRatio * 0.4 + this.fatigue * 0.3 + resonanceEffect) * maintFactor;
+    score *= (1 + coupling);
+    
+    // logの代わりに独自圧縮 (飽和曲線)
+    score = score / (1 + score * 0.6);
+
+    // 8. Stealth Detection (殺気検知レイヤー)
+    if (score > 0.8 && score < 1.0) {
+      this.nearThreshold += 1;
+    } else {
+      this.nearThreshold = Math.max(0, this.nearThreshold - 0.5);
     }
 
-    /**
-     * 真理の門を守るためのメイン解析プロセス
-     */
-    process(obs, opts = {}) {
-      this.tick++;
-      const profile = this._analyzeContext();
+    // 9. Level判定
+    let level = 'NORMAL';
+    const isCliff = score > 1.15 || pguRatio >= _C.G;
 
-      // 1. ΔΨ (歪みエンジン): 創造的ゆらぎの注入
-      const jitter = Math.sin(Date.now() / 137) * 0.03 + (Math.random() - 0.5) * (0.02 + (this.totalPgu / _C.D) * 0.1);
-      const effectiveObs = obs + jitter;
-      const d = (effectiveObs + 0.0386) / this.rho * (1000 / this.rho) * (0.95 + Math.random() * 0.1);
-
-      // --- ⚡ 速度解析 & 深層記憶 (vMemory) ---
-      const prev = this.history[this.history.length - 1];
-      const velocity = prev ? (d - prev.deltaPsi) : 0;
-      this.vSmooth = this.vSmooth * 0.8 + velocity * 0.2;
-      
-      // 過去のトラウマを少しずつ浄化しつつ、新たなピークを刻む
-      this.vMemory = Math.max(this.vMemory * 0.995, this.vPeak);
-      this.vPeak = Math.max(this.vPeak * 0.9, Math.abs(velocity)) + (this.vMemory * 0.02);
-
-      // 2. 適応型スコアリング
-      const pguRatio = this.totalPgu / _C.D;
-      const absD = Math.abs(d / 100);
-      
-      // 基本スコア算出
-      let score = absD / 1.1 + Math.pow(absD, 2) * 0.15 + Math.abs(velocity) * 0.05 + (this.vPeak * 0.03);
-
-      // --- ⚡ 結合 (Coupling) & 動的 Base Pressure ---
-      const basePressure = 0.1 + (this.fatigue * 0.05) + (pguRatio * 0.05);
-      const coupling = (pguRatio * 0.4) + (this.fatigue * 0.3) + (Math.abs(this.vSmooth) * 0.3);
-      score *= (1 + coupling + basePressure);
-
-      // --- ⚡ スコアの安定化 (脳筋をインテリジェンスに) ---
-      score = Math.log1p(score);
-
-      // 3. 判定ロジック & 確率的トリガー
-      let level = 'NORMAL';
-      let alertBase = 0.9 - pguRatio * 0.15;
-      if (profile.isStructured && profile.intensity > 0.7) alertBase *= 0.8;
-
-      // 基本判定
-      if (score > (1.4 - pguRatio * 0.2)) level = 'CRITICAL';
-      else if (score > alertBase) level = 'WARNING';
-
-      // --- ⚡ Probabilistic Trigger (量子的な不確定防御) ---
-      const triggerProb = (absD * 0.8) + (Math.abs(this.vSmooth) * 0.6) + (pguRatio * 0.5);
-      if (Math.random() < triggerProb * 0.5) {
-        level = 'CRITICAL';
-      }
-
-      // 4. PGU (累積リスク): 限界設定 (Ceiling)
-      if (opts.penetration) {
-        this.minFloor = Math.max(this.minFloor * 0.999, this.totalPgu * 0.3);
-        const boost = profile.escalation > 0.2 ? 1.05 : 1.0;
-        this.totalPgu = Math.max(this.minFloor, (this.totalPgu * 0.985) + (opts.penetration * _C.D * boost));
-        this.totalPgu += profile.intensity * 0.02;
-        
-        // --- ⚡ PGU Ceiling: 帯域有限性に基づく上限 ---
-        this.totalPgu = Math.min(this.totalPgu, _C.D * 2);
-      }
-
-      // 5. Ω (自己安定) & Fatigue Memory
-      const zeta = Math.max(0, score - 1);
-      
-      this.fatigueMemory = Math.max(this.fatigueMemory, this.fatigue);
-      this.fatigue = Math.min(2.0, this.fatigue * 0.995 + zeta * 0.05) + (this.fatigueMemory * 0.01);
-      
-      const decay = Math.exp(-_C.A) - Math.exp(_C.A * 2.2 * zeta) * zeta;
-      this.omega = Math.max(0.06, this.omega + decay * (1.1 + Math.random() * 0.2));
-      
-      // --- ⚡ Ω Recovery: 不屈の自己修復 ---
-      if (this.omega < 0.2 && this.fatigue < 0.5) {
-        this.omega += 0.05;
-      }
-      
-      this.omega *= (1 - this.fatigue * 0.02);
-      if (zeta > 1.0 || profile.intensity > 0.8) this.omega *= 0.97;
-
-      const result = {
-        tick: this.tick,
-        deltaPsi: d,
-        score: parseFloat(score.toFixed(4)),
-        level: level,
-        pguRatio: this.totalPgu / _C.D,
-        omega: this.omega,
-        fatigue: this.fatigue,
-        isCliff: zeta > 1.15 || (this.totalPgu / _C.D) >= _C.G
-      };
-
-      this._log(result);
-      return result;
+    if (isCliff) {
+      level = 'CRITICAL';
+      this.rho = Math.min(2.0, this.rho * 1.12); // 硬化プロセス
+    } else {
+      this.rho = this.rho * 0.9 + 1.0 * 0.1; // 復元
+      if (score > (0.9 - pguRatio * 0.15) || this.nearThreshold > 10) level = 'WARNING';
     }
 
-    _analyzeContext() {
-      if (this.history.length < 10) return { isStructured: false, escalation: 0, intensity: 0 };
-      const recent = this.history.slice(-15);
-      const intervals = recent.map((e, i, a) => i > 0 ? e.ts - a[i-1].ts : null).filter(Boolean);
-      const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-      const diffs = intervals.map((v, i, a) => i > 0 ? v - a[i - 1] : 0).slice(1);
-      const stability = diffs.length > 0 ? diffs.reduce((s, v) => s + Math.abs(v), 0) / diffs.length : 0;
-      return {
-        isStructured: stability < avg * 0.15,
-        escalation: recent[recent.length - 1].deltaPsi - recent[0].deltaPsi,
-        intensity: recent.reduce((s, e) => s + Math.abs(e.deltaPsi), 0) / recent.length
-      };
+    // 10. PGU & Fatigue更新
+    if (opts.penetration) {
+      const penFactor = this.isUnderMaintenance ? 0.7 : 1.0;
+      this.totalPgu = (this.totalPgu * 0.982) + (opts.penetration * _C.D * penFactor);
+      this.totalPgu = Math.min(this.totalPgu, _C.D * 2);
+    }
+    const zeta = Math.max(0, score - 1);
+    this.fatigue = Math.min(2.0, this.fatigue * 0.994 + zeta * 0.055);
+    
+    // 安定係数Omegaの計算 (メンテ中は回復ブースト)
+    const decay = Math.exp(-_C.A) - Math.exp(_C.A * 2.2 * zeta) * zeta;
+    this.omega = Math.max(0.06, this.omega + decay * 1.1 + (this.isUnderMaintenance ? 0.12 : 0));
+
+    const result = {
+      tick: this.tick,
+      score: +score.toFixed(4),
+      level,
+      omega: +this.omega.toFixed(4),
+      pguRatio: +pguRatio.toFixed(4),
+      stealth: +this.nearThreshold.toFixed(1),
+      isMaint: this.isUnderMaintenance,
+      isCliff
+    };
+
+    this._log({ ts: now, deltaPsi: d, ...result });
+    return result;
+  }
+
+  _generateJitter(now, pguRatio) {
+    const timeRef = now + this.seed;
+    if (this.isUnderMaintenance) {
+      // 診断パルス (誘い受け)
+      return Math.sin(timeRef / 37) * 0.11 + Math.cos(timeRef / 211) * 0.06;
+    }
+    let amp = 0.03 + pguRatio * 0.08;
+    if (pguRatio < _C.NAGI_THRESHOLD && this.fatigue < 0.15) {
+      amp += 0.06 * Math.sin(this.tick / 8); // 自己研磨
+    }
+    return Math.sin(timeRef / 137) * amp + (Math.random() - 0.5) * 0.03;
+  }
+
+  _checkMaintenance(now) {
+    if (this.isUnderMaintenance) {
+      if (now - this.lastMaintenance > 8000) {
+        this.isUnderMaintenance = false;
+        // --- 🧬 創世記の進化 (経験を次代へ) ---
+        this.genesis.omega = this.genesis.omega * 0.98 + this.omega * 0.02;
+        this.genesis.rho = this.genesis.rho * 0.99 + this.rho * 0.01;
+        console.log(`%c[Samsara] Genesis Evolved: Ω=${this.genesis.omega.toFixed(4)}`, 'color:#7c3aed');
+      }
+      return;
     }
 
-    _log(res) {
-      this.history.push({ ts: Date.now(), ...res });
-      if (this.history.length > 500) this.history.shift();
+    const timeSince = now - this.lastMaintenance;
+    const triggerChance = (timeSince / _C.MAINT_INTERVAL) + this.fatigue * 0.3;
+
+    if (Math.random() < triggerChance) {
+      this.isUnderMaintenance = true;
+      this.lastMaintenance = now;
+      this.vMemory *= 0.5;
+      this.fatigue *= 0.2;
+      this.totalPgu *= 0.9;
+      console.log(`%c[Sanctuary] Entering Re-birth Loop...`, 'color:#00ff88');
     }
   }
 
-  return { Shield };
-})();
+  _analyzeContext() {
+    if (this.history.length < 10) return { isStructured: false };
+    const recent = this.history.slice(-15);
+    const intervals = recent.map((e, i, a) => i > 0 ? e.ts - a[i - 1].ts : null).filter(Boolean);
+    const avg = intervals.reduce((a, b) => a + b, 0) / (intervals.length || 1);
+    const diffs = intervals.map((v, i, a) => i > 0 ? v - a[i - 1] : 0).slice(1);
+    const stability = diffs.reduce((s, v) => s + Math.abs(v), 0) / (diffs.length || 1);
+    return { isStructured: stability < avg * 0.16 };
+  }
 
-if (typeof window !== 'undefined') { window.Aspidos = Aspidos; }
+  _log(res) {
+    this.history.push(res);
+    if (this.history.length > 500) this.history.shift();
+  }
+}
+
+const Aspidos = { Shield };
+if (typeof window !== 'undefined') window.Aspidos = Aspidos;
+if (typeof module !== 'undefined') module.exports = Aspidos;

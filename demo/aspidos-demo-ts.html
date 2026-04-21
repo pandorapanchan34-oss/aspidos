@@ -1,36 +1,219 @@
-<div id="visualizer">
-    <div id="cliff-msg">CLIFF DETECTION</div>
-</div>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aspidos v1.7 - Browser Security Shield</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0a0a1f;
+      color: #00ffaa;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      height: 100vh;
+    }
+    #header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 10, 31, 0.95);
+      padding: 12px 20px;
+      z-index: 100;
+      border-bottom: 1px solid #00ffaa33;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+    }
+    #visualizer {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    canvas {
+      display: block;
+    }
+    #controls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 10, 31, 0.9);
+      padding: 10px 20px;
+      border-radius: 30px;
+      border: 1px solid #00ffaa44;
+      z-index: 100;
+      display: flex;
+      gap: 12px;
+    }
+    button {
+      background: #00ffaa22;
+      color: #00ffaa;
+      border: 1px solid #00ffaa;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:hover {
+      background: #00ffaa44;
+    }
+    .info {
+      position: fixed;
+      top: 70px;
+      left: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
 
-<script type="module">
-// 🔗 ドッキング！ (パスはGitHub構成に合わせて修正)
-import { Shield as AspidosCore } from '../src/aspidos.js';
+  <div id="header">
+    <div><strong>Aspidos v1.7 Ω</strong> | PANDORA SYNC</div>
+    <div id="status">Stealth: 0.0 | Level: NORMAL</div>
+  </div>
 
-const core = new AspidosCore();
+  <div class="info" id="info">
+    tick: 0<br>
+    score: 0.0000<br>
+    omega: 1.0000<br>
+    pgu: 0.0000
+  </div>
 
-// 🎨 updateUI: コアの出力を器に流し込む（ドッキングの要）
-function updateUI(r) {
-  // 数値の投影
-  document.getElementById('omega-val').innerText = r.omega;
-  document.getElementById('stealth-val').innerText = r.stealth;
+  <canvas id="visualizer"></canvas>
 
-  // 物理的描画（バーの生成）
-  const visualizer = document.getElementById('visualizer');
-  const bar = document.createElement('div');
-  bar.className = 'bar';
-  bar.style.height = `${r.score * 70}%`;
-  bar.style.left = `${Math.random() * 95}%`;
-  bar.style.backgroundColor = r.level === 'CRITICAL' ? '#ff0055' : '#00ff88';
-  
-  visualizer.appendChild(bar);
-  if (visualizer.children.length > 50) visualizer.removeChild(visualizer.children[1]);
-}
+  <div id="controls">
+    <button onclick="startNormal()">Normal Mode</button>
+    <button onclick="startAttack()">Attack Mode (Heavy)</button>
+    <button onclick="stopAll()">Stop</button>
+  </div>
 
-// 🚀 シミュレーター：コアを叩く
-function runStep(v, penetration = 0) {
-  const r = core.step(v, penetration ? { penetration } : {});
-  updateUI(r); // ここで「心臓」と「器」が繋がる！
-}
+  <script type="module">
+    import { AspidosCore } from '../src/aspidos.js';
 
-// --- 以下、startNormal / startAttack 等の制御ロジック ---
-</script>
+    const core = new AspidosCore();
+    window.core = core; // デバッグ用
+
+    const canvas = document.getElementById('visualizer');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight - 60; // header分
+      canvas.width = width;
+      canvas.height = height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // シンプルな粒子ビジュアライザー
+    let particles = [];
+
+    function updateUI(result) {
+      // Header更新
+      document.getElementById('status').textContent = 
+        `Stealth: ${result.stealth} | Level: ${result.level}`;
+
+      // Infoパネル更新
+      document.getElementById('info').innerHTML = `
+        tick: ${result.tick}<br>
+        score: ${result.score}<br>
+        omega: ${result.omega}<br>
+        pgu: ${result.pguRatio}
+      `;
+
+      // ビジュアライザー描画
+      ctx.fillStyle = 'rgba(10, 10, 31, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+
+      // 中心のコア
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const intensity = Math.min(1, result.score * 1.5);
+
+      // リング（rhoベース）
+      ctx.strokeStyle = result.level === 'CRITICAL' ? '#ff3366' : 
+                       result.level === 'WARNING' ? '#ffaa00' : '#00ffaa';
+      ctx.lineWidth = 3 + intensity * 8;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 80 + result.omega * 60, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 粒子生成
+      if (Math.random() < 0.4 + intensity * 0.6) {
+        particles.push({
+          x: centerX + (Math.random() - 0.5) * 120,
+          y: centerY + (Math.random() - 0.5) * 120,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          life: 45 + Math.random() * 30,
+          color: result.level === 'CRITICAL' ? '#ff6688' : '#88ffdd'
+        });
+      }
+
+      // 粒子描画 & 更新
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 60;
+        ctx.fillRect(p.x, p.y, 3, 3);
+
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      ctx.globalAlpha = 1.0;
+    }
+
+    // --- コントロール ---
+    let timer = null;
+
+    window.startNormal = () => {
+      stopAll();
+      timer = setInterval(() => {
+        const r = core.step(Math.random() * 0.6);
+        updateUI(r);
+      }, 280);
+    };
+
+    window.startAttack = () => {
+      stopAll();
+      timer = setInterval(() => {
+        for (let i = 0; i < 12; i++) {
+          const r = core.step(
+            0.65 + Math.random() * 0.55,
+            { penetration: 0.18 + Math.random() * 0.12 }
+          );
+          updateUI(r);
+        }
+      }, 160);
+    };
+
+    window.stopAll = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+
+    // ページ読み込み時に少し動かしておく
+    setTimeout(() => {
+      startNormal();
+    }, 500);
+
+    console.log('%cAspidos Demo UI initialized!', 'color:#00ffaa; font-size:14px;');
+  </script>
+</body>
+</html>

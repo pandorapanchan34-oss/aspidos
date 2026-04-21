@@ -1,232 +1,191 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aspidos v1.7 - PANDORA SHIELD</title>
-  <style>
-    body {
-      margin: 0; padding: 0;
-      background: #05050f;
-      color: #00ffcc;
-      font-family: 'Courier New', monospace;
-      overflow: hidden;
-      height: 100vh;
-    }
-    #header {
-      position: fixed; top: 0; left: 0; right: 0;
-      background: rgba(5,5,15,0.95);
-      padding: 14px 25px;
-      z-index: 200;
-      border-bottom: 2px solid #00ffcc44;
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 16px; letter-spacing: 1px;
-    }
-    canvas { display: block; }
-    .info {
-      position: fixed; top: 80px; left: 25px;
-      background: rgba(0,0,0,0.7); padding: 14px 18px;
-      border: 1px solid #00ffcc33; border-radius: 6px;
-      font-size: 13.5px; line-height: 1.5; z-index: 100;
-    }
-    #controls {
-      position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
-      background: rgba(5,5,15,0.92); padding: 12px 25px;
-      border-radius: 40px; border: 1px solid #00ffcc55;
-      z-index: 200; display: flex; gap: 15px;
-    }
-    button {
-      background: transparent; color: #00ffcc; border: 2px solid #00ffcc;
-      padding: 10px 22px; border-radius: 30px; cursor: pointer;
-      font-weight: bold; transition: all 0.2s;
-    }
-    button:hover { background: #00ffcc22; transform: scale(1.05); }
-    .scanline {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(transparent 50%, rgba(0,255,200,0.03) 50%);
-      background-size: 100% 4px;
-      pointer-events: none; z-index: 10; animation: scan 4s linear infinite;
-    }
-    @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
-  </style>
-</head>
-<body>
+<script>
+  // AspidosCore (Shieldクラス) の定義はここにそのまま貼り付けてね
 
-  <div id="header">
-    <div><strong>ASPIDOS v1.7 Ω</strong>　PANDORA SYNC ACTIVE</div>
-    <div id="status">STEALTH: 0.0　｜　LEVEL: NORMAL</div>
-  </div>
+  const core = new AspidosCore();
+  const canvas = document.getElementById('visualizer');
+  const ctx = canvas.getContext('2d');
+  let w, h;
 
-  <div class="info" id="info">
-    TICK: 0<br>
-    SCORE: 0.0000<br>
-    OMEGA: 1.0000<br>
-    PGU: 0.0000
-  </div>
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight - 70;
+  }
+  resize();
+  window.addEventListener('resize', resize);
 
-  <canvas id="visualizer"></canvas>
-  <div class="scanline"></div>
+  let particles = [];        // 攻撃粒子
+  let defenseEffects = [];   // 防御成功時のエフェクト
+  let shieldIntegrity = 1.0; // 0.0 ~ 1.0 (視覚用)
 
-  <div id="controls">
-    <button onclick="startNormal()">NORMAL MONITOR</button>
-    <button onclick="startAttack()">ATTACK SIMULATION</button>
-    <button onclick="stopAll()">PAUSE SYSTEM</button>
-  </div>
+  // 攻撃パターン
+  const attackPatterns = {
+    normal:  { name: "Normal",   color: "#00ff88", intensity: 0.4,  penetration: 0.08, count: 6 },
+    spike:   { name: "Spike",    color: "#ff3366", intensity: 1.2,  penetration: 0.28, count: 18 },
+    burst:   { name: "Burst",    color: "#ffaa00", intensity: 1.5,  penetration: 0.22, count: 32 },
+    stealth: { name: "Stealth",  color: "#aa66ff", intensity: 0.9,  penetration: 0.38, count: 14 }
+  };
 
-  <script>
-    // ====================== ここに aspidos.js の全コードを貼り付けて ======================
-    // （前回送った Shield クラス全部 + export const AspidosCore = Shield; の部分）
-    // ===================================================================================
+  let currentAttack = "normal";
 
-    const core = new AspidosCore();
-
-    const canvas = document.getElementById('visualizer');
-    const ctx = canvas.getContext('2d');
-    let w, h;
-
-    function resize() {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight - 60;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    let particles = [];
-    let rings = [];
-
-    function createRing(intensity) {
-      rings.push({
-        radius: 60,
-        alpha: 1,
-        speed: 0.8 + intensity * 1.5,
-        color: intensity > 0.7 ? '#ff3366' : '#00ffcc'
+  function createAttackParticles(cx, cy, patternKey) {
+    const p = attackPatterns[patternKey];
+    for (let i = 0; i < p.count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 180 + Math.random() * 120;
+      particles.push({
+        x: cx + Math.cos(angle) * dist,
+        y: cy + Math.sin(angle) * dist,
+        vx: -Math.cos(angle) * (4 + p.intensity * 5),
+        vy: -Math.sin(angle) * (4 + p.intensity * 5),
+        life: 80,
+        size: 3.5 + Math.random() * 2.5,
+        color: p.color,
+        pattern: patternKey,
+        hit: false
       });
     }
+  }
 
-    function updateUI(result) {
-      // UIテキスト更新
-      document.getElementById('status').textContent = 
-        `STEALTH: ${result.stealth.toFixed(1)}　｜　LEVEL: ${result.level}`;
-      
-      document.getElementById('info').innerHTML = `
-        TICK: ${result.tick}<br>
-        SCORE: ${result.score}<br>
-        OMEGA: ${result.omega}<br>
-        PGU: ${result.pguRatio}
-      `;
-
-      // 背景クリア（残像効果）
-      ctx.fillStyle = 'rgba(5, 5, 15, 0.12)';
-      ctx.fillRect(0, 0, w, h);
-
-      const cx = w / 2;
-      const cy = h / 2;
-      const intensity = Math.min(1.8, result.score * 2.2);
-
-      // 大型シールドリング（複数層）
-      ctx.lineWidth = 4 + intensity * 12;
-      for (let i = 0; i < 3; i++) {
-        ctx.strokeStyle = i === 1 ? result.level === 'CRITICAL' ? '#ff3366' : '#00ffcc' : '#00ffcc33';
-        ctx.globalAlpha = 0.9 - i * 0.25;
-        ctx.beginPath();
-        ctx.arc(cx, cy, 110 + result.omega * 85 + i * 35, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-
-      // 回転リング
-      rings.forEach((r, i) => {
-        r.radius += r.speed;
-        r.alpha -= 0.018;
-        ctx.strokeStyle = r.color;
-        ctx.globalAlpha = r.alpha;
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r.radius, 0, Math.PI * 2);
-        ctx.stroke();
+  function createDefenseEffect(cx, cy, strength) {
+    for (let i = 0; i < 18 + strength * 12; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      defenseEffects.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * (2 + strength * 7),
+        vy: Math.sin(angle) * (2 + strength * 7),
+        life: 25 + Math.random() * 35,
+        color: "#88ffff",
+        size: 2.5
       });
-      rings = rings.filter(r => r.alpha > 0.05);
+    }
+  }
 
-      // 粒子システム（より派手）
-      if (Math.random() < 0.65 + intensity * 0.8) {
-        for (let i = 0; i < 3; i++) {
-          particles.push({
-            x: cx + (Math.random() - 0.5) * 280,
-            y: cy + (Math.random() - 0.5) * 280,
-            vx: (Math.random() - 0.5) * (6 + intensity * 4),
-            vy: (Math.random() - 0.5) * (6 + intensity * 4),
-            life: 55 + Math.random() * 45,
-            size: 2.5 + Math.random() * 3,
-            color: result.level === 'CRITICAL' ? '#ff6699' : (Math.random() > 0.5 ? '#00ffcc' : '#aaffff')
-          });
-        }
+  function updateUI(result) {
+    // UIテキスト
+    document.getElementById('status').textContent = 
+      `Aspidos v1.7 Ω | Stealth: ${result.stealth.toFixed(1)} | Level: ${result.level} | Integrity: ${(shieldIntegrity*100).toFixed(0)}%`;
+
+    document.getElementById('info').innerHTML = `
+      TICK: ${result.tick}<br>
+      SCORE: ${result.score}<br>
+      OMEGA: ${result.omega.toFixed(3)}<br>
+      PGU: ${result.pguRatio.toFixed(3)}
+    `;
+
+    ctx.fillStyle = 'rgba(5, 5, 15, 0.14)';
+    ctx.fillRect(0, 0, w, h);
+
+    const cx = w / 2;
+    const cy = h / 2;
+    const intensity = Math.min(2.0, result.score * 2.6);
+
+    // 常時シールド（常に表示）
+    const shieldHue = result.level === 'CRITICAL' ? 0 : (shieldIntegrity < 0.6 ? 30 : 180);
+    ctx.strokeStyle = `hsl(${shieldHue}, 100%, 65%)`;
+    ctx.lineWidth = 7 + intensity * 9;
+    ctx.globalAlpha = 0.85 + shieldIntegrity * 0.15;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 105 + result.omega * 105, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // シールドの内側グロー
+    ctx.globalAlpha = 0.25;
+    ctx.lineWidth = 25;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 95 + result.omega * 60, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+
+    // 攻撃粒子更新 & 描画
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vx *= 0.97;
+      p.vy *= 0.97;
+      p.life--;
+
+      // シールドとの衝突判定（簡易）
+      const dx = p.x - cx;
+      const dy = p.y - cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 115 + result.omega * 80 && !p.hit) {
+        p.hit = true;
+        p.vx *= -0.3;   // 跳ね返り
+        p.vy *= -0.3;
+        shieldIntegrity = Math.max(0.3, shieldIntegrity - 0.04); // 少し削られる
+        createDefenseEffect(cx, cy, 0.8); // 防御エフェクト発生
       }
 
-      // 粒子描画
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vx *= 0.975;
-        p.vy *= 0.975;
-        p.life -= 1;
-
-        ctx.globalAlpha = p.life / 70;
+      if (p.life > 0) {
+        ctx.globalAlpha = p.life / 90;
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-
-        // たまに光の線
-        if (p.life % 8 === 0 && Math.random() < 0.3) {
-          ctx.strokeStyle = p.color;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(cx, cy);
-          ctx.lineTo(p.x, p.y);
-          ctx.stroke();
-        }
-
-        if (p.life <= 0) particles.splice(i, 1);
+        ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+      } else {
+        particles.splice(i, 1);
       }
-      ctx.globalAlpha = 1.0;
-
-      // 強度が高いときにリング追加
-      if (intensity > 0.6 && Math.random() < 0.4) createRing(intensity);
     }
+    ctx.globalAlpha = 1.0;
 
-    // コントロール
-    let timer = null;
+    // 防御エフェクト
+    for (let i = defenseEffects.length - 1; i >= 0; i--) {
+      const e = defenseEffects[i];
+      e.x += e.vx;
+      e.y += e.vy;
+      e.vx *= 0.94;
+      e.vy *= 0.94;
+      e.life--;
 
-    window.startNormal = () => {
-      stopAll();
-      timer = setInterval(() => {
-        const r = core.step(Math.random() * 0.65);
+      ctx.globalAlpha = e.life / 45;
+      ctx.fillStyle = e.color;
+      ctx.fillRect(e.x, e.y, e.size, e.size);
+
+      if (e.life <= 0) defenseEffects.splice(i, 1);
+    }
+    ctx.globalAlpha = 1.0;
+
+    // シールド回復（常に少しずつ）
+    shieldIntegrity = Math.min(1.0, shieldIntegrity + 0.003);
+  }
+
+  // ==================== コントロール ====================
+  let timer = null;
+
+  window.startNormal = () => {
+    stopAll();
+    currentAttack = "normal";
+    timer = setInterval(() => {
+      const r = core.step(Math.random() * 0.55);
+      updateUI(r);
+    }, 220);
+  };
+
+  window.startAttack = (pattern = "spike") => {
+    stopAll();
+    currentAttack = pattern;
+    const pat = attackPatterns[pattern];
+    timer = setInterval(() => {
+      for (let i = 0; i < 8; i++) {
+        const r = core.step(0.6 + Math.random() * pat.intensity, { penetration: pat.penetration });
         updateUI(r);
-      }, 220);
-    };
+      }
+      createAttackParticles(w/2, h/2, pattern);   // 視覚的な攻撃発生
+    }, 180);
+  };
 
-    window.startAttack = () => {
-      stopAll();
-      timer = setInterval(() => {
-        for (let i = 0; i < 14; i++) {
-          const r = core.step(0.68 + Math.random() * 0.62, { penetration: 0.17 + Math.random() * 0.15 });
-          updateUI(r);
-        }
-      }, 140);
-    };
+  window.stopAll = () => {
+    if (timer) clearInterval(timer);
+    timer = null;
+  };
 
-    window.stopAll = () => {
-      if (timer) clearInterval(timer);
-      timer = null;
-    };
+  // ボタン用
+  window.startSpike = () => startAttack("spike");
+  window.startBurst = () => startAttack("burst");
+  window.startStealth = () => startAttack("stealth");
 
-    // スタート
-    setTimeout(() => {
-      startNormal();
-      // 最初にリングを少し出す
-      for (let i = 0; i < 5; i++) setTimeout(() => createRing(0.6), i * 180);
-    }, 400);
+  // 初期起動
+  setTimeout(() => startNormal(), 300);
 
-    console.log('%cAspidos v1.7 - Enhanced Visualizer LOADED 🔥', 'color:#00ffcc; font-size:15px; font-weight:bold;');
-  </script>
-</body>
-</html>
+  console.log('%cAspidos v1.7 - Always Active Defense System LOADED', 'color:#00ffcc; font-size:16px;');
+</script>

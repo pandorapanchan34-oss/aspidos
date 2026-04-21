@@ -1,165 +1,204 @@
-<script type="module">
-  import { AspidosCore } from '../src/aspidos.js';
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aspidos v1.7 - PANDORA SHIELD</title>
+  <style>
+    body { margin:0; padding:0; background:#05050f; color:#00ffcc; font-family:'Courier New',monospace; overflow:hidden; height:100vh; }
+    #header { position:fixed; top:0; left:0; right:0; background:rgba(5,5,15,0.95); padding:14px 25px; z-index:200; border-bottom:2px solid #00ffcc44; display:flex; justify-content:space-between; font-size:16px; letter-spacing:0.5px; }
+    canvas { display:block; }
+    .info { position:fixed; top:80px; left:25px; background:rgba(0,0,0,0.75); padding:14px 18px; border:1px solid #00ffcc33; border-radius:6px; font-size:13.5px; line-height:1.5; z-index:100; }
+    #controls { position:fixed; bottom:25px; left:50%; transform:translateX(-50%); background:rgba(5,5,15,0.92); padding:12px 25px; border-radius:40px; border:1px solid #00ffcc55; z-index:200; display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+    button { background:transparent; color:#00ffcc; border:2px solid #00ffcc; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:bold; transition:0.2s; }
+    button:hover { background:#00ffcc22; transform:scale(1.05); }
+    .scanline { position:fixed; inset:0; background:linear-gradient(transparent 50%, rgba(0,255,200,0.025) 50%); background-size:100% 4px; pointer-events:none; z-index:10; animation:scan 7s linear infinite; }
+    @keyframes scan { 0% { transform:translateY(-100%); } 100% { transform:translateY(100%); } }
+  </style>
+</head>
+<body>
 
-  const core = new AspidosCore();
+  <div id="header">
+    <div><strong>ASPIDOS v1.7 Ω</strong>　PANDORA SYNC ACTIVE</div>
+    <div id="status">STEALTH: 0.0　｜　LEVEL: NORMAL　｜　INTEGRITY: 100%</div>
+  </div>
 
-  const canvas = document.getElementById('visualizer');
-  const ctx = canvas.getContext('2d');
-  let w, h;
+  <div class="info" id="info">
+    TICK: 0<br>SCORE: 0.0000<br>OMEGA: 1.0000<br>PGU: 0.0000
+  </div>
 
-  function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight - 70;
-  }
-  window.addEventListener('resize', resize);
-  resize();
+  <canvas id="visualizer"></canvas>
+  <div class="scanline"></div>
 
-  let fluidParticles = [];      // 常時流動している防御流体
-  let attackParticles = [];     //  incoming 攻撃
-  let burstEffects = [];        // 防御成功時の大爆発（千本桜風）
+  <div id="controls">
+    <button onclick="startNormal()">Normal Monitor</button>
+    <button onclick="startSpike()">Spike Attack</button>
+    <button onclick="startBurst()">Burst Flood</button>
+    <button onclick="startStealth()">Stealth Probe</button>
+    <button onclick="stopAll()">Pause</button>
+  </div>
 
-  const attackPatterns = {
-    normal:  { color: "#88ffcc", intensity: 0.4, penetration: 0.08, count: 7 },
-    spike:   { color: "#ff3366", intensity: 1.3, penetration: 0.30, count: 25 },
-    burst:   { color: "#ff8800", intensity: 1.6, penetration: 0.25, count: 40 },
-    stealth: { color: "#bb77ff", intensity: 0.9, penetration: 0.40, count: 18 }
-  };
+  <script type="module">
+    import { AspidosCore } from '../src/aspidos.js';
 
-  function createFluidLayer() {
-    for (let i = 0; i < 180; i++) {
-      fluidParticles.push({
-        x: w/2 + (Math.random()-0.5)*280,
-        y: h/2 + (Math.random()-0.5)*280,
-        vx: (Math.random()-0.5)*1.2,
-        vy: (Math.random()-0.5)*1.2,
-        life: 9999, // 常時存在
-        size: 1.8 + Math.random()*2.2,
-        hue: 180 + Math.random()*40   // 青〜シアン寄り
-      });
+    const core = new AspidosCore();
+
+    const canvas = document.getElementById('visualizer');
+    const ctx = canvas.getContext('2d');
+    let w, h;
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight - 70;
     }
-  }
+    window.addEventListener('resize', resize);
+    resize();
 
-  function createAttackParticles(cx, cy, pattern) {
-    const p = attackPatterns[pattern];
-    for (let i = 0; i < p.count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 220 + Math.random() * 160;
-      attackParticles.push({
-        x: cx + Math.cos(angle) * dist,
-        y: cy + Math.sin(angle) * dist,
-        vx: -Math.cos(angle) * (4 + p.intensity * 7),
-        vy: -Math.sin(angle) * (4 + p.intensity * 7),
-        life: 110,
-        size: 3.5,
-        color: p.color,
-        hit: false
-      });
-    }
-  }
+    let attackParticles = [];
+    let defenseEffects = [];
+    let shieldIntegrity = 1.0;
 
-  function createBurstEffect(cx, cy, power = 1) {   // 千本桜風爆散
-    for (let i = 0; i < 45 + power * 25; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 1.5 + Math.random() * (5 + power * 4);
-      burstEffects.push({
-        x: cx, y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 35 + Math.random() * 45,
-        size: 2.2 + Math.random() * 2.8,
-        hue: Math.random() > 0.5 ? 190 : 320,   // 青 or ピンク
-        alpha: 1
-      });
-    }
-  }
+    const attackPatterns = {
+      normal:  { color: "#00ff88", intensity: 0.45, penetration: 0.08,  count: 8 },
+      spike:   { color: "#ff3366", intensity: 1.25, penetration: 0.28, count: 22 },
+      burst:   { color: "#ffaa00", intensity: 1.55, penetration: 0.22, count: 35 },
+      stealth: { color: "#aa66ff", intensity: 0.95, penetration: 0.38, count: 16 }
+    };
 
-  function updateUI(result) {
-    document.getElementById('status').textContent = 
-      `STEALTH: ${result.stealth.toFixed(1)}　｜　LEVEL: ${result.level}　｜　INTEGRITY: ${(shieldIntegrity*100).toFixed(0)}%`;
-
-    document.getElementById('info').innerHTML = `
-      TICK: ${result.tick}<br>
-      SCORE: ${result.score}<br>
-      OMEGA: ${result.omega}<br>
-      PGU: ${result.pguRatio}
-    `;
-
-    ctx.fillStyle = 'rgba(3,3,12,0.18)';
-    ctx.fillRect(0, 0, w, h);
-
-    const cx = w / 2;
-    const cy = h / 2;
-    const intensity = Math.min(2.2, result.score * 2.8);
-
-    // 常時流動する防御流体（千本桜の桜吹雪風）
-    for (let i = 0; i < fluidParticles.length; i++) {
-      const p = fluidParticles[i];
-      p.x += p.vx + Math.sin(Date.now()/300 + i) * 0.6;
-      p.y += p.vy + Math.cos(Date.now()/400 + i) * 0.5;
-      p.vx *= 0.985;
-      p.vy *= 0.985;
-
-      // 軽く中心に引き寄せ
-      p.vx += (cx - p.x) * 0.0008;
-      p.vy += (cy - p.y) * 0.0008;
-
-      ctx.globalAlpha = 0.75 + Math.sin(Date.now()/200 + i) * 0.25;
-      ctx.fillStyle = `hsl(${p.hue}, 90%, 85%)`;
-      ctx.fillRect(p.x, p.y, p.size, p.size);
-    }
-    ctx.globalAlpha = 1.0;
-
-    // 攻撃粒子
-    for (let i = attackParticles.length - 1; i >= 0; i--) {
-      const p = attackParticles[i];
-      p.x += p.vx; p.y += p.vy;
-      p.vx *= 0.96; p.vy *= 0.96;
-      p.life--;
-
-      const dist = Math.hypot(p.x - cx, p.y - cy);
-
-      if (dist < 130 + result.omega * 60 && !p.hit) {
-        p.hit = true;
-        p.vx *= -0.25;
-        createBurstEffect(p.x, p.y, 1.3);   // 流体が攻撃を飲み込んで爆散
-        shieldIntegrity = Math.max(0.4, shieldIntegrity - 0.028);
-      }
-
-      if (p.life > 0) {
-        ctx.globalAlpha = p.life / 120;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
-      } else {
-        attackParticles.splice(i, 1);
+    function createAttackParticles(cx, cy, pattern) {
+      const p = attackPatterns[pattern];
+      for (let i = 0; i < p.count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 200 + Math.random() * 140;
+        attackParticles.push({
+          x: cx + Math.cos(angle) * dist,
+          y: cy + Math.sin(angle) * dist,
+          vx: -Math.cos(angle) * (3.5 + p.intensity * 6),
+          vy: -Math.sin(angle) * (3.5 + p.intensity * 6),
+          life: 95,
+          size: 3.2 + Math.random() * 3,
+          color: p.color,
+          hit: false
+        });
       }
     }
-    ctx.globalAlpha = 1;
 
-    // 防御爆散エフェクト（千本桜風）
-    for (let i = burstEffects.length - 1; i >= 0; i--) {
-      const e = burstEffects[i];
-      e.x += e.vx; e.y += e.vy;
-      e.vx *= 0.94; e.vy *= 0.94;
-      e.life--; e.alpha = e.life / 60;
-
-      ctx.globalAlpha = e.alpha;
-      ctx.fillStyle = `hsl(${e.hue}, 100%, 88%)`;
-      ctx.fillRect(e.x, e.y, e.size, e.size);
-      if (e.life <= 0) burstEffects.splice(i, 1);
+    function createDefenseEffect(cx, cy) {
+      for (let i = 0; i < 28; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        defenseEffects.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * (2 + Math.random() * 6),
+          vy: Math.sin(angle) * (2 + Math.random() * 6),
+          life: 30 + Math.random() * 25,
+          color: "#aaffff",
+          size: 2.5
+        });
+      }
     }
-    ctx.globalAlpha = 1.0;
 
-    shieldIntegrity = Math.min(1.0, shieldIntegrity + 0.0035);
-  }
+    function updateUI(result) {
+      document.getElementById('status').textContent = 
+        `STEALTH: ${result.stealth.toFixed(1)}　｜　LEVEL: ${result.level}　｜　INTEGRITY: ${(shieldIntegrity*100).toFixed(0)}%`;
 
-  let timer = null;
-  let shieldIntegrity = 1.0;
+      document.getElementById('info').innerHTML = `
+        TICK: ${result.tick}<br>
+        SCORE: ${result.score}<br>
+        OMEGA: ${result.omega}<br>
+        PGU: ${result.pguRatio}
+      `;
 
-  // 初期流体生成
-  setTimeout(() => createFluidLayer(), 100);
+      ctx.fillStyle = 'rgba(5,5,15,0.14)';
+      ctx.fillRect(0, 0, w, h);
 
-  window.startNormal = () => { /* ... 省略せずに前のコードと同じく実装 ... */ };
-  // （startAttack, stopAll なども同様に前のコードからコピーして調整）
+      const cx = w / 2;
+      const cy = h / 2;
+      const intensity = Math.min(2.1, result.score * 2.4);
 
-  console.log('%cAspidos - Fluid Defense (Senbonzakura Keigō Mode) Activated', 'color:#aaffff; font-size:16px;');
-</script>
+      // 常時シールド
+      const shieldColor = result.level === 'CRITICAL' ? '#ff3366' : (shieldIntegrity < 0.65 ? '#ffaa44' : '#00ffcc');
+      ctx.strokeStyle = shieldColor;
+      ctx.lineWidth = 8 + intensity * 10;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 108 + result.omega * 98, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+
+      // 攻撃粒子
+      for (let i = attackParticles.length - 1; i >= 0; i--) {
+        const p = attackParticles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.vx *= 0.965; p.vy *= 0.965;
+        p.life--;
+
+        const dist = Math.hypot(p.x - cx, p.y - cy);
+        if (dist < 118 + result.omega * 75 && !p.hit) {
+          p.hit = true;
+          p.vx *= -0.4; p.vy *= -0.4;
+          shieldIntegrity = Math.max(0.35, shieldIntegrity - 0.04);
+          createDefenseEffect(cx, cy);
+        }
+
+        if (p.life > 0) {
+          ctx.globalAlpha = p.life / 100;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+        } else {
+          attackParticles.splice(i, 1);
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      // 防御エフェクト
+      for (let i = defenseEffects.length - 1; i >= 0; i--) {
+        const e = defenseEffects[i];
+        e.x += e.vx; e.y += e.vy; e.vx *= 0.93; e.vy *= 0.93; e.life--;
+        ctx.globalAlpha = e.life / 50;
+        ctx.fillStyle = e.color;
+        ctx.fillRect(e.x, e.y, e.size, e.size);
+        if (e.life <= 0) defenseEffects.splice(i, 1);
+      }
+      ctx.globalAlpha = 1;
+
+      shieldIntegrity = Math.min(1.0, shieldIntegrity + 0.004);
+    }
+
+    let timer = null;
+    let currentPattern = "normal";
+
+    window.startNormal = () => {
+      stopAll();
+      currentPattern = "normal";
+      timer = setInterval(() => updateUI(core.step(Math.random() * 0.6)), 230);
+    };
+
+    window.startAttack = (type) => {
+      stopAll();
+      currentPattern = type;
+      const pat = attackPatterns[type];
+      timer = setInterval(() => {
+        for (let i = 0; i < 9; i++) {
+          core.step(0.65 + Math.random() * pat.intensity * 0.8, { penetration: pat.penetration });
+        }
+        updateUI(core.step(0.7)); // 最後に1回update
+        createAttackParticles(w/2, h/2, type);
+      }, 165);
+    };
+
+    window.stopAll = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+
+    window.startSpike   = () => startAttack("spike");
+    window.startBurst   = () => startAttack("burst");
+    window.startStealth = () => startAttack("stealth");
+
+    // 自動スタート
+    setTimeout(() => startNormal(), 300);
+
+    console.log('%cAspidos Demo + Core (separated) initialized!', 'color:#00ffcc; font-size:15px;');
+  </script>
+</body>
+</html>

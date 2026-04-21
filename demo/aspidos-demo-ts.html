@@ -127,52 +127,49 @@
     }
   }
 
-  // 本体描画（サイズほぼ固定 + グロー半分以下）
+    // 本体描画（高密度・非発光コアへの再定義）
   function drawCore(cx, cy, result) {
-    const pulse = Math.sin(Date.now() / 220) * 0.06 + 1.0;
-    const coreSize = 16 + result.omega * 3.5;   // omegaの影響を大幅に弱く
+    const pulse = Math.sin(Date.now() / 300) * 0.05 + 1.0;
+    // OMEGAが1000を超えても肥大化しないよう、対数的に制御
+    const coreSize = 12 + Math.log(result.omega + 1) * 4;
 
-    // 控えめなグロー（半分以下）
+    // 1. 外郭：情報の事象の地平線（うっすらした境界線）
     ctx.save();
-    ctx.globalAlpha = 0.22 + shieldIntegrity * 0.18;   // かなり抑えめ
-    const grad = ctx.createRadialGradient(cx, cy, coreSize * 0.8, cx, cy, coreSize * 4.5);
-    grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.6, '#88eeff');
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
+    ctx.strokeStyle = result.level === 'CRITICAL' ? '#ff3366' : '#00ffcc';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.4;
     ctx.beginPath();
-    ctx.arc(cx, cy, coreSize * 4.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    ctx.arc(cx, cy, coreSize * 2.5 * pulse, 0, Math.PI * 2);
+    ctx.stroke();
 
-    // 本体
-    ctx.fillStyle = '#bbffff';
+    // 2. 凝縮層（グローを廃止し、塗りつぶしを多層化）
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = '#00ffcc';
     ctx.beginPath();
-    ctx.arc(cx, cy, coreSize * pulse, 0, Math.PI * 2);
+    ctx.arc(cx, cy, coreSize * 1.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // 中心の強い光点
+    // 3. 本体核（シャープな輪郭）
+    ctx.globalAlpha = 1.0;
+    ctx.fillStyle = '#05050f'; // 中を暗くして「密度」を表現
+    ctx.beginPath();
+    ctx.arc(cx, cy, coreSize, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, coreSize, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 4. 中心の「真理の点」（ここだけは白く鋭く）
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(cx, cy, 6.5, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
   }
 
-  function updateUI(result) {
-    currentIntensity = Math.min(2.0, result.score * 2.1);
-
-    document.getElementById('status').textContent = 
-      `STEALTH: ${result.stealth.toFixed(1)}　｜　LEVEL: ${result.level}　｜　INTEGRITY: ${(shieldIntegrity*100).toFixed(0)}%`;
-
-    document.getElementById('info').innerHTML = `
-      TICK: ${result.tick}<br>
-      SCORE: ${result.score}<br>
-      OMEGA: ${result.omega}<br>
-      PGU: ${result.pguRatio}
-    `;
-
-    ctx.fillStyle = 'rgba(3,3,12,0.14)';
-    ctx.fillRect(0, 0, w, h);
 
     const cx = w / 2;
     const cy = h / 2;

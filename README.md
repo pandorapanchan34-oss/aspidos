@@ -40,7 +40,7 @@ if (alert.alert) {
   console.log('⚠️ System instability detected');
 }
 ## 🎯 Convergence Demo
-https://pandorapanchan34-oss.github.io/aspidos/demo/aspidos-demo.html
+https://pandorapanchan34-oss.github.io/aspidos/demo/aspidos-demo-ts.html
 ```javascript
 const { PandoraDefense } = require('aspidos');
 const pd = new PandoraDefense();

@@ -290,29 +290,69 @@ const _C = {
   get G() { return 0.8333; }   // 5/6
 };
 
+// ==================== 強化版 Aspidos Core (Jitter & Adaptive Edition) ====================
+
 class DeltaPsiEngine {
   constructor() {
     this._history = [];
     this._rho = 1.0;
   }
+
   compute(obs) {
+    // 【強化1】創造的ゆらぎ (Dynamic Jitter)
+    // 攻撃者に検知しきい値を悟らせないためのホワイトノイズ
+    const jitter = (Math.random() - 0.5) * 0.04; 
+    const effectiveObs = obs + jitter;
+
     const dt = 1000 / Math.max(this._rho, 0.01);
-    let d = (1.0 * obs + 0.0386) / Math.max(this._rho, 0.01) * dt;
-    d *= (0.97 + Math.random() * 0.06);
+    let d = (1.0 * effectiveObs + 0.0386) / Math.max(this._rho, 0.01) * dt;
+    
+    // 非線形な振れ幅を付与
+    d *= (0.95 + Math.random() * 0.1);
+    
     this._history.push(d);
     if (this._history.length > 400) this._history.shift();
     return d;
   }
-  anomalyScore(d) {
+
+  anomalyScore(d, pguRatio = 0) {
     const abs = Math.abs(d);
+    
+    // 【強化2】動的しきい値 (Adaptive Threshold)
+    // PGU（累積リスク）が上がっている時は、より小さな歪みでも「警告」を出す
+    const alertBase = 0.9 - (pguRatio * 0.15); // リスクが高いほどしきい値が下がる
+    const criticalBase = 1.4 - (pguRatio * 0.2);
+
     const score = abs / 1.1;
+    
     return {
       score,
-      isAlert: score > 1.0,
-      level: score > 1.5 ? 'CRITICAL' : score > 0.9 ? 'WARNING' : 'NORMAL'
+      isAlert: score > alertBase,
+      level: score > criticalBase ? 'CRITICAL' : score > alertBase ? 'WARNING' : 'NORMAL'
     };
   }
 }
+
+// analyze関数も、pguRatioをanomalyScoreに渡すように少し微調整
+function analyze(v, opts = {}) {
+  pd.tick++;
+  
+  // 先にPGUの状態を確認（しきい値に反映させるため）
+  let p = pd.pgu.status();
+  
+  const d = pd.psi.compute(v);
+  // PGUの状況をスコア判定にフィードバック（相互作用）
+  const a = pd.psi.anomalyScore(d, p.ratio);
+  
+  if (opts.penetration) p = pd.pgu.add(opts.penetration);
+
+  const z = Math.max(0, a.score - 1);
+  const o = pd.omega.update(z);
+
+  // ... (以下、ログ保存とUI返却)
+  return { deltaPsi: d, anomaly: a, pgu: p, omega: o };
+}
+
 
 class PGUMonitor {
   constructor() { this.total = 0; }

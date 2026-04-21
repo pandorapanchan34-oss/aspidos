@@ -14,6 +14,9 @@
     button:hover { background:#00ffcc22; transform:scale(1.05); }
     .scanline { position:fixed; inset:0; background:linear-gradient(transparent 50%, rgba(0,255,200,0.025) 50%); background-size:100% 4px; pointer-events:none; z-index:10; animation:scan 7s linear infinite; }
     @keyframes scan { 0% { transform:translateY(-100%); } 100% { transform:translateY(100%); } }
+    .ts-now { color:#ffd700; font-size:12px; }
+    .ts-elapsed { color:#4a9a7c; font-size:11px; }
+    .ts-genesis { color:#2a6a5c; font-size:10px; }
   </style>
 </head>
 <body>
@@ -42,6 +45,21 @@
   import { AspidosCore } from '../src/aspidos.js';
 
   const core = new AspidosCore();
+  const SESSION_GENESIS = Date.now();
+
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    return d.toTimeString().slice(0, 8); // HH:MM:SS
+  }
+
+  function fmtElapsed(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m > 0
+      ? `${m}m${String(sec).padStart(2,'0')}s`
+      : `${sec}s`;
+  }
 
   const canvas = document.getElementById('visualizer');
   const ctx = canvas.getContext('2d');
@@ -114,7 +132,7 @@
   }
 
   function createBurstEffect(cx, cy, power = 1) {
-    const num = 22 + Math.floor(power * 16);   // 爆散を少し華やかに
+    const num = 22 + Math.floor(power * 16);
     for (let i = 0; i < num; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 2.2 + Math.random() * (4.5 + power * 2);
@@ -130,7 +148,6 @@
   }
 
   function drawCore(cx, cy) {
-    // 極小の白い光点だけ（ほとんど目立たない）
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(cx, cy, 6, 0, Math.PI * 2);
@@ -140,14 +157,24 @@
   function updateUI(result) {
     currentIntensity = Math.min(2.0, result.score * 2.15);
 
-    document.getElementById('status').textContent = 
+    // ── タイムスタンプ計算 ──────────────────────────
+    const now = Date.now();
+    const elapsed = now - SESSION_GENESIS;
+    const lastEntry = core.history[core.history.length - 1];
+    const lastTs = lastEntry ? lastEntry.ts : now;
+
+    document.getElementById('status').textContent =
       `STEALTH: ${result.stealth.toFixed(1)}　｜　LEVEL: ${result.level}　｜　INTEGRITY: ${(shieldIntegrity*100).toFixed(0)}%`;
 
+    // infoパネルにタイムスタンプ追加
     document.getElementById('info').innerHTML = `
+      <span class="ts-now">⏱ ${fmtTime(lastTs)}</span><br>
+      <span class="ts-elapsed">+${fmtElapsed(elapsed)}</span><br>
       TICK: ${result.tick}<br>
       SCORE: ${result.score}<br>
       OMEGA: ${result.omega}<br>
-      PGU: ${result.pguRatio}
+      PGU: ${result.pguRatio}<br>
+      <span class="ts-genesis" style="font-size:10px">GENESIS: ${fmtTime(SESSION_GENESIS)}</span>
     `;
 
     ctx.fillStyle = 'rgba(3,3,12,0.12)';
@@ -156,8 +183,8 @@
     const cx = w / 2;
     const cy = h / 2;
 
-    const targetFluid = currentIntensity > 0.75 ? 
-      Math.floor(52 + currentIntensity * 75) : 44;   // Normal時はかなり控えめ
+    const targetFluid = currentIntensity > 0.75 ?
+      Math.floor(52 + currentIntensity * 75) : 44;
 
     updateFluidCount(targetFluid);
 
@@ -187,7 +214,7 @@
       if (Math.hypot(p.x - cx, p.y - cy) < 162 && !p.hit) {
         p.hit = true;
         p.vx *= -0.26;
-        createBurstEffect(p.x, p.y, currentIntensity * 0.75);   // 爆散を少し強調
+        createBurstEffect(p.x, p.y, currentIntensity * 0.75);
         shieldIntegrity = Math.max(0.34, shieldIntegrity - 0.026);
       }
 
@@ -201,7 +228,7 @@
     }
     ctx.globalAlpha = 1;
 
-    // 千本桜爆散（誕生の瞬間を綺麗に）
+    // 千本桜爆散
     for (let i = burstEffects.length - 1; i >= 0; i--) {
       const e = burstEffects[i];
       e.x += e.vx; e.y += e.vy;
@@ -255,9 +282,8 @@
     startNormal();
   }, 200);
 
-  console.log('%cAspidos - 千本桜誕生の瞬間を綺麗に最終版', 'color:#aaffff');
+  console.log('%cAspidos - 千本桜誕生の瞬間を綺麗に最終版 + timestamp', 'color:#aaffff');
 </script>
-  
-  
+
 </body>
 </html>

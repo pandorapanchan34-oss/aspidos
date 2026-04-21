@@ -1,38 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aspidos v1.7 [PANDORA SYNC]</title>
+    <style>
+        body { margin: 0; background: #0b0f1a; color: #00ff88; font-family: 'Courier New', Courier, monospace; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        #header { padding: 15px; border-bottom: 1px solid #00ff8833; display: flex; justify-content: space-between; align-items: center; }
+        #visualizer { flex-grow: 1; position: relative; background: radial-gradient(circle at center, #16213e 0%, #0b0f1a 100%); overflow: hidden; }
+        #controls { padding: 20px; background: #16213e88; display: flex; gap: 10px; justify-content: center; border-top: 1px solid #00ff8833; }
+        button { background: transparent; border: 1px solid #00ff88; color: #00ff88; padding: 10px 20px; cursor: pointer; font-family: inherit; transition: 0.2s; }
+        button:active { background: #00ff88; color: #0b0f1a; }
+        #console { position: absolute; bottom: 10px; left: 10px; font-size: 11px; pointer-events: none; opacity: 0.8; }
+        .bar { position: absolute; bottom: 0; background: #00ff88; width: 4px; transition: 0.1s; }
+        .cliff-alert { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; font-weight: bold; color: #ff0055; display: none; text-shadow: 0 0 20px #ff0055; }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <div>Aspidos v1.7 <span id="maint-label"></span></div>
+    <div>Ω: <span id="omega-val">1.0000</span> | Stealth: <span id="stealth-val">0.0</span></div>
+</div>
+
+<div id="visualizer">
+    <div id="cliff-msg" class="cliff-alert">CLIFF DETECTION</div>
+    <div id="console"></div>
+</div>
+
+<div id="controls">
+    <button onclick="startNormal()">NORMAL</button>
+    <button onclick="startAttack()">ATTACK</button>
+    <button onclick="stopAll()">STOP</button>
+</div>
+
 <script type="module">
-import { AspidosCore } from '../src/aspidos.js';
+    // --- モジュールが見つからない場合のために、ここに最新クラスを定義 ---
+    import { Shield as AspidosCore } from '../src/aspidos.js';
 
-const core = new AspidosCore();
+    const core = new AspidosCore();
+    let timer = null;
+    const visualizer = document.getElementById('visualizer');
+    const logs = document.getElementById('console');
 
-let timer = null;
+    // --- 描画ロジック (updateUI) ---
+    window.updateUI = (r) => {
+        // 数値更新
+        document.getElementById('omega-val').innerText = r.omega;
+        document.getElementById('stealth-val').innerText = r.stealth;
+        document.getElementById('maint-label').innerText = r.isMaint ? '[RE-BIRTH]' : '';
+        document.getElementById('maint-label').style.color = '#7c3aed';
 
-function runStep(v, penetration = 0) {
-  const r = core.step(v, penetration ? { penetration } : {});
-  updateUI(r);
-}
+        // 崖落ち演出
+        document.getElementById('cliff-msg').style.display = r.isCliff ? 'block' : 'none';
 
-// --- Normal ---
-window.startNormal = () => {
-  stopAll();
-  timer = setInterval(() => {
-    runStep(Math.random() * 0.6);
-  }, 280);
-};
+        // バーの生成（歪み可視化）
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.style.left = (Math.random() * 100) + '%';
+        bar.style.height = (r.score * 100) + '%';
+        if(r.level === 'CRITICAL') bar.style.backgroundColor = '#ff0055';
+        else if(r.level === 'WARNING') bar.style.backgroundColor = '#ffaa00';
+        visualizer.appendChild(bar);
 
-// --- Attack ---
-window.startAttack = () => {
-  stopAll();
-  timer = setInterval(() => {
-    for (let i = 0; i < 12; i++) {
-      runStep(
-        0.65 + Math.random() * 0.55,
-        0.18 + Math.random() * 0.12
-      );
+        // 古いバーを消す
+        if(visualizer.children.length > 50) visualizer.removeChild(visualizer.children[1]);
+
+        // 簡易ログ
+        logs.innerHTML = `> TICK ${r.tick}: SCORE ${r.score} [${r.level}]<br>` + logs.innerHTML;
+        if(logs.innerHTML.length > 500) logs.innerHTML = logs.innerHTML.substring(0, 500);
+    };
+
+    function runStep(v, penetration = 0) {
+        const r = core.step(v, penetration ? { penetration } : {});
+        updateUI(r);
     }
-  }, 160);
-};
 
-window.stopAll = () => {
-  if (timer) clearInterval(timer);
-  timer = null;
-};
+    window.startNormal = () => {
+        stopAll();
+        timer = setInterval(() => { runStep(Math.random() * 0.6); }, 280);
+    };
+
+    window.startAttack = () => {
+        stopAll();
+        timer = setInterval(() => {
+            for (let i = 0; i < 12; i++) {
+                runStep(0.65 + Math.random() * 0.55, 0.18 + Math.random() * 0.12);
+            }
+        }, 160);
+    };
+
+    window.stopAll = () => { if (timer) clearInterval(timer); timer = null; };
 </script>
+</body>
+</html>

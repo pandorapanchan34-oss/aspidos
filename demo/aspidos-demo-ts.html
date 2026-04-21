@@ -3,204 +3,215 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aspidos v1.7 - Browser Security Shield</title>
+  <title>Aspidos v1.7 - PANDORA SHIELD</title>
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      background: #0a0a1f;
-      color: #00ffaa;
+      margin: 0; padding: 0;
+      background: #05050f;
+      color: #00ffcc;
       font-family: 'Courier New', monospace;
       overflow: hidden;
       height: 100vh;
     }
     #header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: rgba(10, 10, 31, 0.95);
-      padding: 12px 20px;
-      z-index: 100;
-      border-bottom: 1px solid #00ffaa33;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 15px;
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(5,5,15,0.95);
+      padding: 14px 25px;
+      z-index: 200;
+      border-bottom: 2px solid #00ffcc44;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 16px; letter-spacing: 1px;
     }
-    #visualizer {
-      position: absolute;
-      top: 60px;
-      left: 0;
-      right: 0;
-      bottom: 0;
-    }
-    canvas {
-      display: block;
+    canvas { display: block; }
+    .info {
+      position: fixed; top: 80px; left: 25px;
+      background: rgba(0,0,0,0.7); padding: 14px 18px;
+      border: 1px solid #00ffcc33; border-radius: 6px;
+      font-size: 13.5px; line-height: 1.5; z-index: 100;
     }
     #controls {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(10, 10, 31, 0.9);
-      padding: 10px 20px;
-      border-radius: 30px;
-      border: 1px solid #00ffaa44;
-      z-index: 100;
-      display: flex;
-      gap: 12px;
+      position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+      background: rgba(5,5,15,0.92); padding: 12px 25px;
+      border-radius: 40px; border: 1px solid #00ffcc55;
+      z-index: 200; display: flex; gap: 15px;
     }
     button {
-      background: #00ffaa22;
-      color: #00ffaa;
-      border: 1px solid #00ffaa;
-      padding: 8px 16px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-family: inherit;
+      background: transparent; color: #00ffcc; border: 2px solid #00ffcc;
+      padding: 10px 22px; border-radius: 30px; cursor: pointer;
+      font-weight: bold; transition: all 0.2s;
     }
-    button:hover {
-      background: #00ffaa44;
+    button:hover { background: #00ffcc22; transform: scale(1.05); }
+    .scanline {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(transparent 50%, rgba(0,255,200,0.03) 50%);
+      background-size: 100% 4px;
+      pointer-events: none; z-index: 10; animation: scan 4s linear infinite;
     }
-    .info {
-      position: fixed;
-      top: 70px;
-      left: 20px;
-      background: rgba(0,0,0,0.6);
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 13px;
-      line-height: 1.4;
-    }
+    @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
   </style>
 </head>
 <body>
 
   <div id="header">
-    <div><strong>Aspidos v1.7 Ω</strong> | PANDORA SYNC</div>
-    <div id="status">Stealth: 0.0 | Level: NORMAL</div>
+    <div><strong>ASPIDOS v1.7 Ω</strong>　PANDORA SYNC ACTIVE</div>
+    <div id="status">STEALTH: 0.0　｜　LEVEL: NORMAL</div>
   </div>
 
   <div class="info" id="info">
-    tick: 0<br>
-    score: 0.0000<br>
-    omega: 1.0000<br>
-    pgu: 0.0000
+    TICK: 0<br>
+    SCORE: 0.0000<br>
+    OMEGA: 1.0000<br>
+    PGU: 0.0000
   </div>
 
   <canvas id="visualizer"></canvas>
+  <div class="scanline"></div>
 
   <div id="controls">
-    <button onclick="startNormal()">Normal Mode</button>
-    <button onclick="startAttack()">Attack Mode (Heavy)</button>
-    <button onclick="stopAll()">Stop</button>
+    <button onclick="startNormal()">NORMAL MONITOR</button>
+    <button onclick="startAttack()">ATTACK SIMULATION</button>
+    <button onclick="stopAll()">PAUSE SYSTEM</button>
   </div>
 
-  <script type="module">
-    import { AspidosCore } from '../src/aspidos.js';
+  <script>
+    // ====================== ここに aspidos.js の全コードを貼り付けて ======================
+    // （前回送った Shield クラス全部 + export const AspidosCore = Shield; の部分）
+    // ===================================================================================
 
     const core = new AspidosCore();
-    window.core = core; // デバッグ用
 
     const canvas = document.getElementById('visualizer');
     const ctx = canvas.getContext('2d');
-    let width, height;
+    let w, h;
 
     function resize() {
-      width = window.innerWidth;
-      height = window.innerHeight - 60; // header分
-      canvas.width = width;
-      canvas.height = height;
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight - 60;
     }
     window.addEventListener('resize', resize);
     resize();
 
-    // シンプルな粒子ビジュアライザー
     let particles = [];
+    let rings = [];
+
+    function createRing(intensity) {
+      rings.push({
+        radius: 60,
+        alpha: 1,
+        speed: 0.8 + intensity * 1.5,
+        color: intensity > 0.7 ? '#ff3366' : '#00ffcc'
+      });
+    }
 
     function updateUI(result) {
-      // Header更新
+      // UIテキスト更新
       document.getElementById('status').textContent = 
-        `Stealth: ${result.stealth} | Level: ${result.level}`;
-
-      // Infoパネル更新
+        `STEALTH: ${result.stealth.toFixed(1)}　｜　LEVEL: ${result.level}`;
+      
       document.getElementById('info').innerHTML = `
-        tick: ${result.tick}<br>
-        score: ${result.score}<br>
-        omega: ${result.omega}<br>
-        pgu: ${result.pguRatio}
+        TICK: ${result.tick}<br>
+        SCORE: ${result.score}<br>
+        OMEGA: ${result.omega}<br>
+        PGU: ${result.pguRatio}
       `;
 
-      // ビジュアライザー描画
-      ctx.fillStyle = 'rgba(10, 10, 31, 0.15)';
-      ctx.fillRect(0, 0, width, height);
+      // 背景クリア（残像効果）
+      ctx.fillStyle = 'rgba(5, 5, 15, 0.12)';
+      ctx.fillRect(0, 0, w, h);
 
-      // 中心のコア
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const intensity = Math.min(1, result.score * 1.5);
+      const cx = w / 2;
+      const cy = h / 2;
+      const intensity = Math.min(1.8, result.score * 2.2);
 
-      // リング（rhoベース）
-      ctx.strokeStyle = result.level === 'CRITICAL' ? '#ff3366' : 
-                       result.level === 'WARNING' ? '#ffaa00' : '#00ffaa';
-      ctx.lineWidth = 3 + intensity * 8;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 80 + result.omega * 60, 0, Math.PI * 2);
-      ctx.stroke();
+      // 大型シールドリング（複数層）
+      ctx.lineWidth = 4 + intensity * 12;
+      for (let i = 0; i < 3; i++) {
+        ctx.strokeStyle = i === 1 ? result.level === 'CRITICAL' ? '#ff3366' : '#00ffcc' : '#00ffcc33';
+        ctx.globalAlpha = 0.9 - i * 0.25;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 110 + result.omega * 85 + i * 35, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
 
-      // 粒子生成
-      if (Math.random() < 0.4 + intensity * 0.6) {
-        particles.push({
-          x: centerX + (Math.random() - 0.5) * 120,
-          y: centerY + (Math.random() - 0.5) * 120,
-          vx: (Math.random() - 0.5) * 4,
-          vy: (Math.random() - 0.5) * 4,
-          life: 45 + Math.random() * 30,
-          color: result.level === 'CRITICAL' ? '#ff6688' : '#88ffdd'
-        });
+      // 回転リング
+      rings.forEach((r, i) => {
+        r.radius += r.speed;
+        r.alpha -= 0.018;
+        ctx.strokeStyle = r.color;
+        ctx.globalAlpha = r.alpha;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+      rings = rings.filter(r => r.alpha > 0.05);
+
+      // 粒子システム（より派手）
+      if (Math.random() < 0.65 + intensity * 0.8) {
+        for (let i = 0; i < 3; i++) {
+          particles.push({
+            x: cx + (Math.random() - 0.5) * 280,
+            y: cy + (Math.random() - 0.5) * 280,
+            vx: (Math.random() - 0.5) * (6 + intensity * 4),
+            vy: (Math.random() - 0.5) * (6 + intensity * 4),
+            life: 55 + Math.random() * 45,
+            size: 2.5 + Math.random() * 3,
+            color: result.level === 'CRITICAL' ? '#ff6699' : (Math.random() > 0.5 ? '#00ffcc' : '#aaffff')
+          });
+        }
       }
 
-      // 粒子描画 & 更新
+      // 粒子描画
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.life--;
-        p.vx *= 0.98;
-        p.vy *= 0.98;
+        p.vx *= 0.975;
+        p.vy *= 0.975;
+        p.life -= 1;
 
+        ctx.globalAlpha = p.life / 70;
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life / 60;
-        ctx.fillRect(p.x, p.y, 3, 3);
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+
+        // たまに光の線
+        if (p.life % 8 === 0 && Math.random() < 0.3) {
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        }
 
         if (p.life <= 0) particles.splice(i, 1);
       }
       ctx.globalAlpha = 1.0;
+
+      // 強度が高いときにリング追加
+      if (intensity > 0.6 && Math.random() < 0.4) createRing(intensity);
     }
 
-    // --- コントロール ---
+    // コントロール
     let timer = null;
 
     window.startNormal = () => {
       stopAll();
       timer = setInterval(() => {
-        const r = core.step(Math.random() * 0.6);
+        const r = core.step(Math.random() * 0.65);
         updateUI(r);
-      }, 280);
+      }, 220);
     };
 
     window.startAttack = () => {
       stopAll();
       timer = setInterval(() => {
-        for (let i = 0; i < 12; i++) {
-          const r = core.step(
-            0.65 + Math.random() * 0.55,
-            { penetration: 0.18 + Math.random() * 0.12 }
-          );
+        for (let i = 0; i < 14; i++) {
+          const r = core.step(0.68 + Math.random() * 0.62, { penetration: 0.17 + Math.random() * 0.15 });
           updateUI(r);
         }
-      }, 160);
+      }, 140);
     };
 
     window.stopAll = () => {
@@ -208,12 +219,14 @@
       timer = null;
     };
 
-    // ページ読み込み時に少し動かしておく
+    // スタート
     setTimeout(() => {
       startNormal();
-    }, 500);
+      // 最初にリングを少し出す
+      for (let i = 0; i < 5; i++) setTimeout(() => createRing(0.6), i * 180);
+    }, 400);
 
-    console.log('%cAspidos Demo UI initialized!', 'color:#00ffaa; font-size:14px;');
+    console.log('%cAspidos v1.7 - Enhanced Visualizer LOADED 🔥', 'color:#00ffcc; font-size:15px; font-weight:bold;');
   </script>
 </body>
 </html>
